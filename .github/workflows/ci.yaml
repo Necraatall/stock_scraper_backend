@@ -2,10 +2,9 @@ name: CI Pipeline
 
 # Controls when the workflow will run
 on:
-  push:
-    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+    types: [opened, synchronize, reopened]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -13,7 +12,7 @@ on:
 jobs:
   # Job for building Docker image
   build-image:
-    if: github.event_name == 'pull_request'
+    if: github.event.pull_request.merged == false
     runs-on: ubuntu-latest
 
     steps:
@@ -30,7 +29,7 @@ jobs:
 
   # Job for Trivy scan, depends on build-image job
   trivy-scan:
-    if: github.event_name == 'pull_request'
+    if: github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     needs: build-image
 
@@ -43,7 +42,7 @@ jobs:
 
   # Job for running Ruff, depends on trivy-scan job
   run-ruff:
-    if: github.event_name == 'pull_request'
+    if: github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     needs: trivy-scan
 
@@ -61,7 +60,7 @@ jobs:
 
   # Job for running pytest with coverage, depends on run-ruff job
   run-pytest-with-coverage:
-    if: github.event_name == 'pull_request'
+    if: github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     needs: run-ruff
 
