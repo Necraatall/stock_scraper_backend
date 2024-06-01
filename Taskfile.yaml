@@ -83,3 +83,20 @@ tasks:
       1. Runs Trivy against the specified Docker image.
     cmds:
       - trivy image --severity HIGH,CRITICAL --ignore-unfixed {{.IMAGE_NAME}}
+
+  ruff:
+    summary: Runs Ruff linter
+    desc: |
+      This task performs the following steps to run Ruff linter:
+      1. Installs Ruff if not already installed.
+      2. Runs Ruff against the codebase.
+    cmds:
+      - ruff check .
+
+  run-pytest:
+    summary: Runs pytest
+    desc: |
+      This task performs the following steps to run pytest:
+      1. Runs pytest against the tests.
+    cmds:
+      - pytest --cov=lection2 tests/

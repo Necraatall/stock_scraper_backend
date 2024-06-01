@@ -1,0 +1,78 @@
+name: CI Pipeline
+
+# Controls when the workflow will run
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  # Job for building Docker image
+  build-image:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Build Docker image
+      run: task build-image
+
+  # Job for Trivy scan, depends on build-image job
+  trivy-scan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: build-image
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Scan Docker image with Trivy
+      run: task trivy-scan
+
+  # Job for running Ruff, depends on trivy-scan job
+  run-ruff:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: trivy-scan
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Run Ruff
+      run: task run-ruff
+
+  # Job for running pytest with coverage, depends on run-ruff job
+  run-pytest-with-coverage:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: run-ruff
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Run pytest with coverage
+      run: task run-pytest-with-coverage
