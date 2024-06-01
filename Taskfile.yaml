@@ -1,0 +1,85 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+# https://taskfile.dev
+version: "3"
+
+vars:
+  IMAGE_NAME: "buildime"
+
+env:
+  USER_FILE: ".current_user"
+
+tasks:
+  get-user:
+    cmds:
+      - whoami > {{.USER_FILE}}
+  setup:
+    summary: Sets up Taskfile auto-completion
+    deps:
+      - get-user
+    desc: |
+      This task performs the following steps to set up auto-completion for Taskfile:
+      1. Downloads the bash auto-completion script for Taskfile.
+      2. Adds the current user to the sudoers file to allow moving the script without a password.
+      3. Moves the downloaded script to the bash-completion directory.
+      4. Adds a line to the .bashrc file to source the auto-completion script on shell startup.
+    cmds:
+      - curl -sL https://taskfile.dev/install.sh | sh
+      - export PATH="$PATH:./bin"
+      - curl -LO https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash
+      - echo 'USER=$(cat {{.USER_FILE}}) && $USER ALL=(ALL:ALL) NOPASSWD:'' /usr/bin/mv' | echo 'sudo tee /etc/sudoers.d/$USER'
+      - mv task.bash /usr/share/bash-completion/completions/
+      - echo 'source /usr/share/bash-completion/completions/task' >> ~/.bashrc
+
+  install-poetry:
+    summary: Installs Poetry package manager
+    deps:
+      - setup
+    desc: |
+      This task performs the following steps to install Poetry package manager:
+      1. Downloads the installation script for Poetry.
+      2. Executes the installation script.
+    cmds:
+      - pip install poetry
+      - pip install --upgrade poetry
+
+  install-dependencies:
+    summary: Installs project dependencies
+    deps:
+      - install-poetry
+    cmds:
+      - poetry lock
+      - poetry shell
+      - poetry install
+      - poetry update
+
+  install-trivy:
+    summary: Installs Trivy vulnerability scanner
+    desc: |
+      This task performs the following steps to install Trivy vulnerability scanner:
+      1. Installs necessary packages (wget, apt-transport-https, gnupg).
+      2. Downloads and stores the public key for the Trivy repository.
+      3. Adds the Trivy repository to the APT sources list.
+      4. Updates the list of available packages.
+      5. Installs Trivy.
+    cmds:
+      - apt-get install wget apt-transport-https gnupg -y
+      - wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | tee /usr/share/keyrings/trivy.gpg > /dev/null
+      - echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | tee -a /etc/apt/sources.list.d/trivy.list
+      - apt-get update -y
+      - apt-get install trivy -y
+
+  build-image:
+    summary: Builds a Docker image
+    desc: |
+      This task performs the following steps to build a Docker image:
+      1. Builds a Docker image using the Dockerfile in the root directory.
+    cmds:
+      - docker build --no-cache -t {{.IMAGE_NAME}} .
+
+  trivy-scan:
+    summary: Scans a Docker image using Trivy
+    desc: |
+      This task performs the following steps to scan a Docker image using Trivy:
+      1. Runs Trivy against the specified Docker image.
+    cmds:
+      - trivy image --severity HIGH,CRITICAL --ignore-unfixed {{.IMAGE_NAME}}
