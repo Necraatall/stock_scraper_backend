@@ -27,4 +27,7 @@ RUN apt-get update -y && \
 
 COPY . .
 
+# Instalace postgresql-client a netcat
+RUN apk add --no-cache postgresql-client netcat-openbsd
+
 CMD ["./prestart.sh", "db", "uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
