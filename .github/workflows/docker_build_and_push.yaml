@@ -35,4 +35,3 @@ jobs:
           docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.ecr-login.outputs.registry }}/${ECR_REPOSITORY}:$IMAGE_TAG
           # Push the image to ECR
           docker push ${{ steps.ecr-login.outputs.registry }}/${ECR_REPOSITORY}:$IMAGE_TAG
-        
