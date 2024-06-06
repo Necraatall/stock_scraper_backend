@@ -14,6 +14,8 @@ RUN chmod -R a+x /usr/local/bin
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock Taskfile.yaml ./
+COPY prestart.sh ./prestart.sh
+RUN chmod +x ./prestart.sh
 
 RUN pip install --upgrade poetry
 # Install curl, Task, dependencies, poetry and trivy
@@ -25,4 +27,9 @@ RUN apt-get update -y && \
 
 COPY . .
 
-CMD ["uvicorn", "app.main:stocks", "--host", "0.0.0.0", "--port", "80"]
+# Instalace postgresql-client a netcat
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    netcat-openbsd
+
+CMD ["./prestart.sh", "db", "uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
