@@ -32,6 +32,4 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     netcat-openbsd
 
-RUN docker pull nginx
-
 CMD ["./prestart.sh", "db", "uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
