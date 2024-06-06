@@ -26,7 +26,7 @@ jobs:
 
       - name: Build, tag, and push Docker image to Amazon ECR
         env:
-          ECR_REPOSITORY: public.ecr.aws/registry-alias/lection2  # Změň na svůj ECR repozitář public.ecr.aws/registry-alias/lection2
+          ECR_REPOSITORY: lection2
           IMAGE_TAG: latest
         run: |
           # Build Docker image
