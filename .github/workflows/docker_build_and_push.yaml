@@ -82,10 +82,10 @@ jobs:
         run: |
           docker build -t ${{ steps.ecr-login.outputs.registry }}/${{ env.REGISTRY_ALIAS }}/${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }} .
 
-      - name: Tag Docker image
-        run: |
-          docker tag ${{ steps.ecr-login.outputs.registry }}/${{ env.REGISTRY_ALIAS }}/${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }} \
-            ${{ steps.ecr-login.outputs.registry }}/${{ env.REGISTRY_ALIAS }}/${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }}
+      # - name: Tag Docker image
+      #   run: |
+      #     docker tag ${{ steps.ecr-login.outputs.registry }}/${{ env.REGISTRY_ALIAS }}/${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }} \
+      #       ${{ steps.ecr-login.outputs.registry }}/${{ env.REGISTRY_ALIAS }}/${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }}
 
       - name: Push Docker image to Amazon ECR
         run: |
