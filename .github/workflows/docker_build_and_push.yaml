@@ -81,6 +81,5 @@ jobs:
           IMAGE_TAG: latest
         run: |
           echo "#######################VALUES: $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG"
-          docker build -t $REPOSITORY:$IMAGE_TAG .
-          docker tag $REPOSITORY:$IMAGE_TAG $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
+          docker build $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
           docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
