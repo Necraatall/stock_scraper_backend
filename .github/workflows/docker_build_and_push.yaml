@@ -58,10 +58,9 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
-    # Definice proměnných zde
     env:
-      REGISTRY_ALIAS: d8o8x6c7  # Tvůj registry alias
-      REPOSITORY: lection2  # Název tvého ECR repozitáře
+      REGISTRY_ALIAS: d8o8x6c7
+      REPOSITORY: lection2
       IMAGE_TAG: latest
 
     steps:
