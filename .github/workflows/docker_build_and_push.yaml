@@ -42,5 +42,7 @@ jobs:
           REPOSITORY: lection2
           IMAGE_TAG: latest
         run: |
+          echo "#######################VALUES: $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG"
           docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
+          echo "#######################VALUES: $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG"
           docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
