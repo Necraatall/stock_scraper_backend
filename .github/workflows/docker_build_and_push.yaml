@@ -14,7 +14,7 @@ jobs:
       - name: Use Node.js 20
         uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: 20.14.0  # Specifikace verze Node.js na 20.14.0
 
       - name: Checkout code
         uses: actions/checkout@v2
@@ -40,3 +40,6 @@ jobs:
           IMAGE_TAG: latest
         run: |
           # Build Docker image
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+          # Push the image to ECR Public
+          docker push $ECR_REPOSITORY:$IMAGE_TAG
