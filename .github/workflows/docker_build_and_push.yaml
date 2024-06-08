@@ -8,23 +8,18 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        run_nodejs: [true]
+    if: github.event_name == 'push'
 
     steps:
       - name: Use Node.js 20
-        if: matrix.run_nodejs == 'true'
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
       - name: Checkout code
-        if: matrix.run_nodejs == 'true'
         uses: actions/checkout@v2
 
       - name: Configure AWS credentials
-        if: matrix.run_nodejs == 'true'
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_TECHNICAL_USER }}
@@ -32,22 +27,16 @@ jobs:
           aws-region: us-east-1
 
       - name: Check AWS Identity
-        if: matrix.run_nodejs == 'true'
         run: |
           aws sts get-caller-identity
 
       - name: Log in to Amazon ECR Public
-        if: matrix.run_nodejs == 'true'
         run: |
           aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
       - name: Build, tag, and push Docker image to Amazon ECR Public
-        if: matrix.run_nodejs == 'true'
         env:
           ECR_REPOSITORY: "public.ecr.aws/d8o8x6c7/lection2"
           IMAGE_TAG: latest
         run: |
           # Build Docker image
-          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
-          # Push the image to ECR Public
-          docker push $ECR_REPOSITORY:$IMAGE_TAG
