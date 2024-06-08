@@ -20,20 +20,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.ACCESS_KEY_TECHNICAL_USER }}
           aws-region: us-east-1
 
-      - name: Install Docker Credential Helper
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y amazon-ecr-credential-helper
-
-      - name: Configure Docker to use Credential Helper
-        run: |
-          mkdir -p ~/.docker
-          echo '{"credHelpers": {"public.ecr.aws": "ecr-login"}}' > ~/.docker/config.json
-
-      - name: Check AWS Identity
-        run: |
-          aws sts get-caller-identity
-
       - name: Log in to Amazon ECR Public
         run: |
           aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
