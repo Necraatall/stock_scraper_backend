@@ -8,14 +8,8 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
 
     steps:
-      - name: Use Node.js 20
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20.14.0
-
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -25,10 +19,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_TECHNICAL_USER }}
           aws-secret-access-key: ${{ secrets.ACCESS_KEY_TECHNICAL_USER }}
           aws-region: us-east-1
-
-      - name: Check AWS Identity
-        run: |
-          aws sts get-caller-identity
 
       - name: Log in to Amazon ECR Public
         run: |
