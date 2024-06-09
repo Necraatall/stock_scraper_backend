@@ -283,17 +283,17 @@ jobs:
 
       - name: Get user
         run: whoami > user.txt
-
+      
       - name: Install task
         run: |
           curl -sL https://taskfile.dev/install.sh | sh
           export PATH="$PATH:./bin"
           curl -LO https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash
           USER=$(cat user.txt)
-          echo "$USER ALL=(ALL:ALL) NOPASSWD: /usr/bin/mv" | sudo tee /etc/sudoers.d/$USER
+          echo "${USER} ALL=(ALL:ALL) NOPASSWD: /usr/bin/mv" | sudo EDITOR='tee -a' visudo -f /etc/sudoers.d/${USER}
           sudo mv task.bash /usr/share/bash-completion/completions/
           echo 'source /usr/share/bash-completion/completions/task' >> ~/.bashrc
-
+  
       - name: Download Taskfile auto-completion script
         run: curl -LO https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash
 
