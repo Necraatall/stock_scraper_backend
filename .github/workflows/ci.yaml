@@ -65,6 +65,22 @@ jobs:
         run: |
           aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
+      - name: Write Secrets to Environment File
+        run: |
+          update_env_var() {
+            local key=$1
+            local value=$2
+            if grep -q "^$key=" .env; then
+              sed -i "s|^$key=.*|$key=$value|" .env
+            else
+              echo "$key=$value" >> .env
+            fi
+          }
+
+          update_env_var "AWS_ACCESS_KEY_ID" "${{ secrets.AWS_ACCESS_KEY_ID_TECHNICAL_USER }}"
+          update_env_var "AWS_SECRET_ACCESS_KEY" "${{ secrets.ACCESS_KEY_TECHNICAL_USER }}"
+          update_env_var "DOCKER_IMAGE_NAME" "${{ secrets.DOCKER_IMAGE_NAME }}"  
+
       - name: Build, tag, and push Docker image to Amazon ECR Public
         env:
           ECR_REPOSITORY: "public.ecr.aws/d8o8x6c7/lection2"
