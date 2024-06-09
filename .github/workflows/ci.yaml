@@ -315,8 +315,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Get Docker image name
+        id: get_image_name
+        run: |
+          echo "::set-output name=image_name::${{ secrets.DOCKER_IMAGE_NAME }}"
+
       - name: Scan Docker image with Trivy
-        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed stock-scraper:latest
+        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed ${{ steps.get_image_name.outputs.image_name }}
 
   # Job for running Ruff
   run-ruff:
