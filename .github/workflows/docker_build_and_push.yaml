@@ -1,9 +1,6 @@
 name: Docker Build and Push to AWS ECR Public
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
