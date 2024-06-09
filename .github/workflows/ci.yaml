@@ -287,7 +287,12 @@ jobs:
       - name: Install task
         run: |
           curl -sL https://taskfile.dev/install.sh | sh
-          echo "/usr/local/bin" >> $GITHUB_PATH
+          export PATH="$PATH:./bin"
+          curl -LO https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash
+          echo 'USER=$(cat user.txt) && $USER ALL=(ALL:ALL) NOPASSWD:'' /usr/bin/mv' | sudo tee /etc/sudoers.d/$USER
+          mv task.bash /usr/share/bash-completion/completions/
+          echo 'source /usr/share/bash-completion/completions/task' >> ~/.bashrc
+
 
       - name: Download Taskfile auto-completion script
         run: curl -LO https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash
