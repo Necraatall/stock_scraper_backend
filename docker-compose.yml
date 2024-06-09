@@ -14,6 +14,7 @@ services:
 
   web:
     build: .
+    image: stock-scraper:latest
     volumes:
       - .:/stocks
     ports:
