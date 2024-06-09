@@ -287,7 +287,7 @@ jobs:
       - name: Install task
         run: |
           curl -sL https://taskfile.dev/install.sh | sh
-          export PATH="$PATH:./bin"
+          export PATH="$PATH:/usr/local/bin"
           curl -LO https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash
           USER=$(cat user.txt)
           echo "${USER} ALL=(ALL:ALL) NOPASSWD: /usr/bin/mv" | sudo EDITOR='tee -a' visudo -f /etc/sudoers.d/${USER}
