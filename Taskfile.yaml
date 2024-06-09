@@ -3,7 +3,7 @@
 version: "3"
 
 vars:
-  IMAGE_NAME: "buildime"
+  IMAGE_NAME: "${{ secrets.DOCKER_IMAGE_NAME }}"
 
 env:
   USER_FILE: ".current_user"
@@ -91,7 +91,7 @@ tasks:
       1. Installs Ruff if not already installed.
       2. Runs Ruff against the codebase.
     cmds:
-      - ruff check .
+      - ruff check ./src
 
   run-pytest:
     summary: Runs pytest

@@ -1,29 +1,129 @@
+# name: CI Pipeline tests
+# # Controls when the workflow will run
+# on:
+#   pull_request:
+#     branches:
+#       - main
+
+#   # Allows you to run this workflow manually from the Actions tab
+#   workflow_dispatch:
+
+# jobs:
+#   # Job for Trivy scan
+#   trivy-scan:
+#     if: github.event.pull_request.merged == false
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - name: Checkout repository
+#       uses: actions/checkout@v4
+
+#     - name: Set up Python
+#       uses: actions/setup-python@v4
+#       with:
+#         python-version: '3.10'
+
+#     - name: Scan Docker image with Trivy
+#       run: task trivy-scan
+
+#   # Job for running Ruff, depends on trivy-scan job
+#   run-ruff:
+#     if: github.event.pull_request.merged == false
+#     runs-on: ubuntu-latest
+#     needs: trivy-scan
+
+#     steps:
+#     - name: Checkout repository
+#       uses: actions/checkout@v4
+
+#     - name: Set up Python
+#       uses: actions/setup-python@v4
+#       with:
+#         python-version: '3.10'
+
+#     - name: Run Ruff
+#       run: task run-ruff
+
+#   # Job for running pytest with coverage, depends on run-ruff job
+#   run-pytest-with-coverage:
+#     if: github.event.pull_request.merged == false
+#     runs-on: ubuntu-latest
+#     needs: run-ruff
+
+#     steps:
+#     - name: Checkout repository
+#       uses: actions/checkout@v4
+
+#     - name: Set up Python
+#       uses: actions/setup-python@v4
+#       with:
+#         python-version: '3.10'
+
+#     - name: Run pytest with coverage
+#       run: task run-pytest-with-coverage
+
+
 name: CI Pipeline tests
+
 # Controls when the workflow will run
 on:
   pull_request:
     branches:
       - main
+    types: [opened, synchronize, reopened]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
-  # Job for Trivy scan
-  trivy-scan:
-    if: github.event.pull_request.merged == false
+  task-prerequisites:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+    - name: Get user
+      run: whoami > user.txt
 
-    - name: Scan Docker image with Trivy
+    - name: Install task
+      run: |
+        curl -sL https://taskfile.dev/install.sh | sh
+        echo "/usr/local/bin" >> $GITHUB_PATH
+
+    - name: Download Taskfile auto-completion script
+      run: curl -LO https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash
+
+    - name: Add user to sudoers
+      run: |
+        USER=$(cat user.txt)
+        echo "$USER ALL=(ALL:ALL) NOPASSWD: /usr/bin/mv" | sudo tee /etc/sudoers.d/$USER
+
+    - name: Move auto-completion script
+      run: sudo mv task.bash /usr/share/bash-completion/completions/
+
+    - name: Add auto-completion script to .bashrc
+      run: echo 'source /usr/share/bash-completion/completions/task' >> ~/.bashrc
+
+    - name: Verify task installation
+      run: task --version
+
+  # Job for Trivy scan
+  trivy-scan:
+    if: github.event.pull_request.merged == false
+    runs-on: ubuntu-latest
+    needs: task-prerequisites
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set Docker image name
+      run: echo "IMAGE_NAME=${{ secrets.DOCKER_IMAGE_NAME }}" >> $GITHUB_ENV
+      env:
+        DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
+
+    - name: Run Trivy scan
       run: task trivy-scan
 
   # Job for running Ruff, depends on trivy-scan job
@@ -36,10 +136,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+    - name: Set Docker image name
+      run: echo "IMAGE_NAME=${{ secrets.DOCKER_IMAGE_NAME }}" >> $GITHUB_ENV
+      env:
+        DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
 
     - name: Run Ruff
       run: task run-ruff
@@ -54,10 +154,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+    - name: Set Docker image name
+      run: echo "IMAGE_NAME=${{ secrets.DOCKER_IMAGE_NAME }}" >> $GITHUB_ENV
+      env:
+        DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
 
     - name: Run pytest with coverage
       run: task run-pytest-with-coverage
