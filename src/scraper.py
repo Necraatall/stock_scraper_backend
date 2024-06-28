@@ -1,31 +1,17 @@
 # app/scraper.py
+import os
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from src.models import Stock, Base
 
-# DATABASE_URL = "postgresql://postgres:root@db:5450/stockdb"
-# DATABASE_URL = 'postgresql://postgres:root#5432@localhost/stockdb'
-DATABASE_URL = "postgresql://root:root@localhost:5450/stockdb"
-Base = declarative_base()
+# Načtení proměnných prostředí
+load_dotenv()
 
-
-class Stock(Base):
-    __tablename__ = "stocks"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    price = Column(Float)
-    change = Column(String)
-    volume = Column(Integer)
-    buy = Column(Float)
-    sell = Column(Float)
-    min = Column(Float)
-    max = Column(Float)
-    record_time = Column(DateTime, default=datetime.now(timezone.utc))
-    change_time = Column(String)
-
+DATABASE_URL = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@db:5432/{os.getenv('POSTGRES_DB')}"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
