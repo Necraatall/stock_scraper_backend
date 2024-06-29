@@ -117,10 +117,12 @@ poetry run pytest
 ├── wait-for-it.sh
 └── ZALOHA
 ```
+
 ## License
 
 This project is licensed under the [Beerware License](https://en.wikipedia.org/wiki/Beerware).
 
 
 ## Note:
+
 ### This project is still under development
