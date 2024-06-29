@@ -57,7 +57,7 @@ tasks:
       - install-poetry
     cmds:
       - poetry lock
-      - poetry install
+      - poetry install --with dev
       - poetry update
 
   install-trivy:
@@ -151,7 +151,6 @@ tasks:
   setup-install:
     desc: "Setup the project"
     deps:
-      - clone-repo
       - install-docker
       - install-poetry
       - install-dependencies

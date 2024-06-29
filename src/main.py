@@ -18,8 +18,11 @@ def get_db():
 
 @app.get("/scrape", response_model=Dict[str, str])
 def scrape_data(db: Session = Depends(get_db)) -> Dict[str, str]:
-    save_stock_data()
-    return {"message": "Data scraped and saved successfully"}
+    try:
+        save_stock_data()
+        return {"message": "Stock data scraped and saved successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 @app.get("/stocks", response_model=List[StockSchema])
 def get_stocks(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)) -> List[StockSchema]:

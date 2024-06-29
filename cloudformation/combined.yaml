@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  MyS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: 
+        Fn::Join:
+          - "-"
+          - - achjotechnicalbucketuztouloz
+            - Ref: AWS::975049935036
+            - Ref: AWS::us-east-1
+
+  MyEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0c55b159cbfafe1f0
+      KeyName: technical_user-ssh-key

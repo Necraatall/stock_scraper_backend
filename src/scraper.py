@@ -1,5 +1,7 @@
-# app/scraper.py
+# src/scraper.py
 import os
+from sqlalchemy import Table, MetaData, Column, Integer, String, Float, DateTime
+from sqlalchemy.exc import ProgrammingError
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -8,46 +10,100 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 from src.models import Stock, Base
 
-# Načtení proměnných prostředí
+# Load environment variables
 load_dotenv()
 
-DATABASE_URL = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@db:5432/{os.getenv('POSTGRES_DB')}"
+DATABASE_URL = os.getenv('DATABASE_URL')
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+metadata = MetaData()
 
-def get_stock_data():
-    url = "https://www.kurzy.cz/akcie-cz/burza/"
+def fetch_page_content(url: str) -> str:
     response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
+    response.raise_for_status()
+    return response.text
+
+def parse_html(html_content: str):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    table = soup.find('table', {'class': 'pd huste leftcolumnwidth r rowcl'})
+    if table is None:
+        raise ValueError("Could not find the stock table on the page")
+    return table
+
+def extract_rows(table) -> list:
+    return table.find_all('tr')[1:]  # Skip the header row
+
+def parse_float(text: str) -> float:
+    try:
+        return float(text.replace(',', ''))
+    except ValueError:
+        return 0.0  # or any default value
+
+def parse_int(text: str) -> int:
+    try:
+        return int(text.replace(' ', '').replace(',', ''))
+    except ValueError:
+        return 0  # or any default value
+
+def parse_row(row) -> dict:
+    columns = row.find_all('td')
+    if len(columns) < 8:
+        return {}  # Skip incomplete rows and return empty dict
     
-    table = soup.find('table', {'class': 'stock-table'})
-    rows = table.find_all('tr')[1:]  # Skip the header row
+    name_td = columns[0].find('a')
+    if name_td is None or 'title' not in name_td.attrs:
+        return {}  # Skip rows with invalid name column and return empty dict
+    
+    stock = {
+        "name": name_td['title'],
+        "price": parse_float(columns[1].text.strip()) if columns[1].text.strip() else 0.0,
+        "change": columns[2].text.strip() if len(columns) > 2 else "",
+        "volume": parse_int(columns[3].text.strip()) if columns[3].text.strip() else 0,
+        "buy": parse_float(columns[4].text.strip()) if columns[4].text.strip() else 0.0,
+        "sell": parse_float(columns[5].text.strip()) if columns[5].text.strip() else 0.0,
+        "min": parse_float(columns[6].text.strip()) if columns[6].text.strip() else 0.0,
+        "max": parse_float(columns[7].text.strip()) if columns[7].text.strip() else 0.0,
+        "change_time": columns[8].text.strip() if len(columns) > 8 else None,
+    }
+    return stock
+
+def get_stock_data() -> list:
+    url = "https://www.kurzy.cz/akcie-cz/burza/"
+    html_content = fetch_page_content(url)
+    table = parse_html(html_content)
+    rows = extract_rows(table)
 
     stock_data = []
-
     for row in rows:
-        columns = row.find_all('td')
-        if len(columns) < 9:
-            continue  # Skip incomplete rows
-        
-        stock = {
-            "name": columns[0].text.strip(),
-            "price": float(columns[1].text.strip().replace(',', '')),
-            "change": columns[2].text.strip(),
-            "volume": int(columns[3].text.strip().replace(' ', '').replace(',', '')),
-            "buy": float(columns[4].text.strip().replace(',', '')),
-            "sell": float(columns[5].text.strip().replace(',', '')),
-            "min": float(columns[6].text.strip().replace(',', '')),
-            "max": float(columns[7].text.strip().replace(',', '')),
-            "change_time": columns[8].text.strip()
-        }
-        
-        stock_data.append(stock)
-
+        stock = parse_row(row)
+        if stock:
+            stock_data.append(stock)
+    
     return stock_data
+
+def create_stock_table(original_name: str):
+    table_name = original_name.replace("akcie_", "other_stocks_").split(",")[0].replace(" ", "_").lower()
+    market_value = original_name.split('_')[-1]
+    stock_type_value = original_name.split('_')[0].replace("_", " ")
+
+    table = Table(
+        table_name, metadata,
+        Column('id', Integer, primary_key=True),
+        Column('date', DateTime, default=datetime.now(timezone.utc)),
+        Column('price', Float),
+        Column('volume', Integer),
+        Column('min', Float),
+        Column('max', Float),
+        Column('market', String, default=market_value),
+        Column('stock_type', String, default=stock_type_value),
+        extend_existing=True
+    )
+    metadata.create_all(engine)  # Create the table if it doesn't exist
+    return table
 
 def save_stock_data():
     session = SessionLocal()
+    Base.metadata.create_all(bind=engine)  # Ensure the main stocks table exists
     stock_data = get_stock_data()
 
     for data in stock_data:
@@ -60,9 +116,26 @@ def save_stock_data():
             sell=data["sell"],
             min=data["min"],
             max=data["max"],
-            change_time=data["change_time"]
+            change_time=data["change_time"],
+            record_time=datetime.now(timezone.utc)
         )
         session.add(stock)
+
+        # Create a new table for the stock if it doesn't exist
+        original_name = data["name"]
+        stock_table = create_stock_table(original_name)
+
+        # Insert data into the stock-specific table
+        insert_statement = stock_table.insert().values(
+            date=datetime.now(timezone.utc),
+            price=data["price"],
+            volume=data["volume"],
+            min=data["min"],
+            max=data["max"],
+            market="online burza",
+            stock_type="akcie"
+        )
+        session.execute(insert_statement)
     
     session.commit()
     session.close()

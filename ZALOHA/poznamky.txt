@@ -1,0 +1,41 @@
+docker exec -it 39ee9b304113 bash
+
+psql -U postgres -d stock_db
+
+\dt
+
+SELECT * FROM stocks LIMIT 1;
+
+
+
+
+
+
+
+
+                    List of relations
+ Schema |             Name             | Type  |  Owner   
+--------+------------------------------+-------+----------
+ public | akcie_deutsche_bank_ag       | table | postgres
+ public | akcie_e.on_se                | table | postgres
+ public | akcie_e4u_a.s.               | table | postgres
+ public | akcie_eman_a.s.              | table | postgres
+ public | akcie_immofinanz_ag          | table | postgres
+ public | akcie_karo_leather_a.s.      | table | postgres
+ public | akcie_nokia                  | table | postgres
+ public | akcie_orlen                  | table | postgres
+ public | akcie_rbi                    | table | postgres
+ public | akcie_rwe_ag                 | table | postgres
+ public | akcie_tatry_mountain_resorts | table | postgres
+ public | akcie_voestalpine_ag         | table | postgres
+ public | akcie_volkswagen_ag          | table | postgres
+ public | alembic_version              | table | postgres
+ public | stocks                       | table | postgres
+(15 rows)
+
+stock_db=# SELECT * FROM akcie_deutsche_bank_ag LIMIT 1;
+
+ id |            date            | price  | volume |  min   |  max  | type  |    market    | stock_type 
+----+----------------------------+--------+--------+--------+-------+-------+--------------+------------
+  1 | 2024-06-28 19:08:52.364341 | 371.75 |      0 | 370.45 | 374.9 | akcie | online burza | akcie
+(1 row)
