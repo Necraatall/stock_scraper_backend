@@ -1,8 +1,9 @@
-# app/main.py
+# src/main.py
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from scraper import save_stock_data, Stock as StockModel, SessionLocal, Base, engine
-from models import Stock, StockCreate
+from src.scraper import save_stock_data, SessionLocal, Base, engine
+from src.models import StockCreate, StockSchema, Stock as StockModel
+from typing import List, Dict
 
 app = FastAPI()
 
@@ -15,28 +16,24 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/scrape")
-def scrape_data(db: Session = Depends(get_db)):
+@app.get("/scrape", response_model=Dict[str, str])
+def scrape_data(db: Session = Depends(get_db)) -> Dict[str, str]:
     save_stock_data()
     return {"message": "Data scraped and saved successfully"}
 
-@app.get("/stocks", response_model=list[Stock])
-def get_stocks(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+@app.get("/stocks", response_model=List[StockSchema])
+def get_stocks(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)) -> List[StockSchema]:
     stocks = db.query(StockModel).offset(skip).limit(limit).all()
     return stocks
 
-@app.post("/stocks", response_model=Stock)
-def create_stock(stock: StockCreate, db: Session = Depends(get_db)):
+@app.post("/stocks", response_model=StockSchema)
+def create_stock(stock: StockCreate, db: Session = Depends(get_db)) -> StockSchema:
     db_stock = StockModel(**stock.dict())
     db.add(db_stock)
     db.commit()
     db.refresh(db_stock)
     return db_stock
 
-
-# ###################### jede
-# from fastapi import FastAPI  
-# app = FastAPI()   
-# @app.get("/") 
-# async def main_route():     
-#   return {"message": "Hey, It is me Goku"}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

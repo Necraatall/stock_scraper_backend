@@ -4,16 +4,19 @@ version = "0.1.0"
 description = ""
 authors = ["Necraatall <milan.zlamal.qa@gmail.com>"]
 readme = "README.md"
+packages = [{ include = "src" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
 fastapi = "^0.111.0"
 uvicorn = {extras = ["standard"], version = "^0.30.0"}
 sqlalchemy = "^2.0.30"
-psycopg2 = "^2.9.9"
 psycopg2-binary = "^2.9.9"
 beautifulsoup4 = "^4.12.3"
 requests = "^2.32.3"
+python-dotenv = "^1.0.1"
+alembic = "^1.13.1"
+
 
 [tool.poetry.dev-dependencies]
 ruff = "^0.4.6"
@@ -23,3 +26,8 @@ pytest-cov = "^5.0.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[virtualenvs]
+create = true
+in-project = true
+path = ".venv"

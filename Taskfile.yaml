@@ -1,17 +1,19 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
 # https://taskfile.dev
-version: "3"
-
-vars:
-  IMAGE_NAME: "${{ secrets.DOCKER_IMAGE_NAME }}"
+version: "3.8"
 
 env:
   USER_FILE: ".current_user"
 
 tasks:
+  load-env:
+    cmds:
+      - source .env
+
   get-user:
     cmds:
       - whoami > {{.USER_FILE}}
+
   setup:
     summary: Sets up Taskfile auto-completion
     deps:
@@ -38,7 +40,14 @@ tasks:
       This task performs the following steps to install Poetry package manager:
       1. Downloads the installation script for Poetry.
       2. Executes the installation script.
+    env:
+      POETRY_VERSION: "1.1.12"
+      PATH: "/app/.venv/bin:${PATH}"
+      PYTHONPATH: ".:src:./.venv/lib/python3.10/site-packages:$PYTHONPATH"
     cmds:
+      - pip install -r requirements.txt
+      - pip install poetry==${POETRY_VERSION}
+      - pip install -U pip
       - pip install poetry
       - pip install --upgrade poetry
 
@@ -48,7 +57,6 @@ tasks:
       - install-poetry
     cmds:
       - poetry lock
-      - poetry shell
       - poetry install
       - poetry update
 
@@ -70,19 +78,23 @@ tasks:
 
   build-image:
     summary: Builds a Docker image
+    deps:
+      - load-env
     desc: |
       This task performs the following steps to build a Docker image:
       1. Builds a Docker image using the Dockerfile in the root directory.
     cmds:
-      - docker build --no-cache -t {{.IMAGE_NAME}} .
+      - docker build --no-cache -t ${DOCKER_IMAGE_NAME} .
 
   trivy-scan:
     summary: Scans a Docker image using Trivy
+    deps:
+      - load-env
     desc: |
       This task performs the following steps to scan a Docker image using Trivy:
       1. Runs Trivy against the specified Docker image.
     cmds:
-      - trivy image --severity HIGH,CRITICAL --ignore-unfixed {{.IMAGE_NAME}}
+      - trivy image --severity HIGH,CRITICAL --ignore-unfixed ${DOCKER_IMAGE_NAME}
 
   ruff:
     summary: Runs Ruff linter
@@ -100,3 +112,56 @@ tasks:
       1. Runs pytest against the tests.
     cmds:
       - pytest --cov=lection2 tests/
+
+# this is setup for newones on python
+  clone-repo:
+    summary: Clones the repository
+    desc: |
+      This task performs the following steps to clone the repository:
+      1. Clones the repository from GitHub to the current directory.
+    cmds:
+      - git clone git@github.com:Necraatall/lection2.git .
+
+  install-docker:
+    summary: Installs Docker and Docker Compose
+    desc: |
+      This task performs the following steps to install Docker and Docker Compose:
+      1. Updates the package list.
+      2. Installs Docker and Docker Compose.
+    cmds:
+      - sudo apt update
+      - sudo apt install -y docker.io docker-compose
+
+  start-docker:
+    summary: Starts Docker containers
+    desc: |
+      This task performs the following steps to start Docker containers:
+      1. Uses Docker Compose to start the containers defined in docker-compose.yml.
+    cmds:
+      - docker-compose up -d
+
+  initialize-database:
+    summary: Initializes the database using Alembic
+    desc: |
+      This task performs the following steps to initialize the database:
+      1. Applies the latest database migrations using Alembic.
+    cmds:
+      - alembic upgrade head
+
+  setup-install:
+    desc: "Setup the project"
+    deps:
+      - clone-repo
+      - install-docker
+      - install-poetry
+      - install-dependencies
+      - start-docker
+
+# alternative step for setup-install for newbies
+  initialize-database:
+    summary: Initializes the database using Alembic
+    desc: |
+      This task performs the following steps to initialize the database:
+      1. Applies the latest database migrations using Alembic.
+    cmds:
+      - alembic upgrade head
