@@ -57,7 +57,7 @@ tasks:
       - install-poetry
     cmds:
       - poetry lock
-      - poetry install
+      - poetry install --with dev
       - poetry update
 
   install-trivy:
@@ -114,14 +114,6 @@ tasks:
       - pytest --cov=lection2 tests/
 
 # this is setup for newones on python
-  clone-repo:
-    summary: Clones the repository
-    desc: |
-      This task performs the following steps to clone the repository:
-      1. Clones the repository from GitHub to the current directory.
-    cmds:
-      - git clone git@github.com:Necraatall/lection2.git .
-
   install-docker:
     summary: Installs Docker and Docker Compose
     desc: |
@@ -151,7 +143,6 @@ tasks:
   setup-install:
     desc: "Setup the project"
     deps:
-      - clone-repo
       - install-docker
       - install-poetry
       - install-dependencies
