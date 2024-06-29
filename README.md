@@ -26,6 +26,7 @@ This will clone the repository into the current directory.
 On terminal at project dir install Taskfile:
 
 #### Linux
+
 1. Download the latest version of Task:
 ```sh
 sh -c "$(curl -fsSL https://taskfile.dev/install.sh)"
@@ -65,6 +66,7 @@ poetry install
 ```sh
 poetry shell
 ```
+
 ### Running the Application
 
 1. Build and start the Docker containers:
@@ -75,6 +77,7 @@ docker-compose up --build -d
 ```sh
 poetry run alembic upgrade head
 ```
+
 ### Running Tests
 
 To run the tests, use the following command:
