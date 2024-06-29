@@ -1,4 +1,4 @@
-# app/models.py
+# src/models.py
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from pydantic import BaseModel
