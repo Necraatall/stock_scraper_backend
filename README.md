@@ -1,4 +1,4 @@
-# Lection2 Project
+# Sock Scraper Project
 
 
 ### Description
