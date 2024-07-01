@@ -1,4 +1,4 @@
-# Sock Scraper Project
+# Stock Scraper Project
 
 
 ### Description
