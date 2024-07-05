@@ -76,6 +76,7 @@ tasks:
       - sh -c 'echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" > /etc/apt/sources.list.d/trivy.list'
       - apt-get update -y
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+      - echo 'export PATH=$PATH:/root/.local/bin' >> $GITHUB_ENV
       - trivy --version
 
   build-image:
