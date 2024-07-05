@@ -21,8 +21,6 @@ jobs:
           apt-get update -y
           apt-get install -y curl sudo wget apt-transport-https gnupg lsb-release
           curl -sL https://taskfile.dev/install.sh | sh
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
           sudo apt-get update -y
           echo Install Trivy using Taskfile
           task install-trivy
