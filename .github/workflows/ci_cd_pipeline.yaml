@@ -82,7 +82,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Ruff
-        run: ruff check ./src
+        run: ruff check --output-format=github .
 
   run-pytest-with-coverage:
     name: Run Pytest with Coverage
