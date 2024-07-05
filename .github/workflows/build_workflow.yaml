@@ -25,6 +25,11 @@ jobs:
       - name: Run unit tests
         run: go test -v ./...
 
+      - name: Install GoReleaser
+        run: |
+          curl -sL https://git.io/goreleaser | bash
+          goreleaser --version
+
       - name: Install Trivy
         run: |
           sudo apt-get update -y
