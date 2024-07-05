@@ -1,0 +1,88 @@
+name: CI Pipeline tests and Docker Build
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Job for Trivy scan
+  trivy-scan:
+    runs-on: ubuntu-latest
+    needs: docker-build-and-push
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get Docker image name
+        id: get_image_name
+        run: |
+          echo "::set-output name=image_name::${{ secrets.DOCKER_IMAGE_NAME }}"
+
+      - name: Scan Docker image with Trivy
+        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed ${{ steps.get_image_name.outputs.image_name }}
+
+  # Job for running Ruff
+  run-ruff:
+    runs-on: ubuntu-latest
+    needs: trivy-scan
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Ruff
+        run: ruff check ./src
+
+  # Job for running pytest with coverage
+  run-pytest-with-coverage:
+    runs-on: ubuntu-latest
+    needs: run-ruff
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run pytest with coverage
+        run: pytest --cov=lection2 tests/
+
+  docker-build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_TECHNICAL_USER }}
+          aws-secret-access-key: ${{ secrets.ACCESS_KEY_TECHNICAL_USER }}
+          aws-region: us-east-1
+
+      - name: Log in to Amazon ECR Public
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Write Secrets to Environment File
+        run: |
+          update_env_var() {
+            local key=$1
+            local value=$2
+            if grep -q "^$key=" .env; then
+              sed -i "s|^$key=.*|$key=$value|" .env
+            else
+              echo "$key=$value" >> .env
+            fi
+          }
+
+          update_env_var "AWS_ACCESS_KEY_ID" "${{ secrets.AWS_ACCESS_KEY_ID_TECHNICAL_USER }}"
+          update_env_var "AWS_SECRET_ACCESS_KEY" "${{ secrets.ACCESS_KEY_TECHNICAL_USER }}"
+          update_env_var "DOCKER_IMAGE_NAME" "${{ secrets.DOCKER_IMAGE_NAME }}"  
+
+      - name: Build, tag, and push Docker image to Amazon ECR Public
+        env:
+          ECR_REPOSITORY: "public.ecr.aws/d8o8x6c7/lection2"
+          IMAGE_TAG: latest
+        run: |
+          # Build Docker image
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+          # Push the image to ECR Public
+          docker push $ECR_REPOSITORY:$IMAGE_TAG

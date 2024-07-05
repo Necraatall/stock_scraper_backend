@@ -1,0 +1,26 @@
+name: Main CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  setup:
+    uses: .github/workflows/aws-setup.yaml@main
+
+  docker_build_and_push:
+    needs: [setup]
+    uses: .github/workflows/docker-build-and-push.yaml@main
+
+  trivy_scan:
+    needs: [docker_build_and_push]
+    uses: .github/workflows/trivy.yaml@main
+
+  terraform_job:
+    needs: [setup]
+    uses: .github/workflows/terraform.yaml@main
