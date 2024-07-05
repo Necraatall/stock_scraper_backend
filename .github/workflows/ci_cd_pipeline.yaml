@@ -10,6 +10,12 @@ on:
   pull_request:
     branches:
       - main
+  workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_ID_TECHNICAL_USER:
+        required: true
+      AWS_SECRET_ACCESS_KEY_TECHNICAL_USER:
+        required: true
 
 jobs:
   setup:
