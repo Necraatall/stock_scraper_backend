@@ -1,0 +1,44 @@
+name: Main CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_ID_TECHNICAL_USER:
+        required: true
+      AWS_SECRET_ACCESS_KEY_TECHNICAL_USER:
+        required: true
+  workflow_dispatch:
+
+jobs:
+  setup:
+    uses: Necraatall/stock_scraper_backend/.github/workflows/aws_setup.yaml@main
+    secrets:
+      AWS_ACCESS_KEY_ID_TECHNICAL_USER: ${{ secrets.AWS_ACCESS_KEY_ID_TECHNICAL_USER }}
+      AWS_SECRET_ACCESS_KEY_TECHNICAL_USER: ${{ secrets.AWS_SECRET_ACCESS_KEY_TECHNICAL_USER }}
+
+  docker_build_and_push:
+    needs: [setup]
+    uses: Necraatall/stock_scraper_backend/.github/workflows/docker_build_and_push.yaml@main
+    secrets:
+      AWS_ACCESS_KEY_ID_TECHNICAL_USER: ${{ secrets.AWS_ACCESS_KEY_ID_TECHNICAL_USER }}
+      AWS_SECRET_ACCESS_KEY_TECHNICAL_USER: ${{ secrets.AWS_SECRET_ACCESS_KEY_TECHNICAL_USER }}
+
+  trivy_scan:
+    needs: [docker_build_and_push]
+    uses: Necraatall/stock_scraper_backend/.github/workflows/trivy.yaml@main
+    secrets:
+      AWS_ACCESS_KEY_ID_TECHNICAL_USER: ${{ secrets.AWS_ACCESS_KEY_ID_TECHNICAL_USER }}
+      AWS_SECRET_ACCESS_KEY_TECHNICAL_USER: ${{ secrets.AWS_SECRET_ACCESS_KEY_TECHNICAL_USER }}
+
+  terraform_job:
+    needs: [setup]
+    uses: Necraatall/stock_scraper_backend/.github/workflows/terraform.yaml@main
+    secrets:
+      AWS_ACCESS_KEY_ID_TECHNICAL_USER: ${{ secrets.AWS_ACCESS_KEY_ID_TECHNICAL_USER }}
+      AWS_SECRET_ACCESS_KEY_TECHNICAL_USER: ${{ secrets.AWS_SECRET_ACCESS_KEY_TECHNICAL_USER }}
