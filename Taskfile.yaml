@@ -70,11 +70,12 @@ tasks:
       4. Updates the list of available packages.
       5. Installs Trivy.
     cmds:
-      - apt-get install wget apt-transport-https gnupg -y
-      - wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | tee /usr/share/keyrings/trivy.gpg > /dev/null
-      - echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | tee -a /etc/apt/sources.list.d/trivy.list
-      - apt-get update -y
-      - apt-get install trivy -y
+      - sudo apt-get update -y
+      - sudo apt-get install -y wget apt-transport-https gnupg
+      - wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+      - sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" > /etc/apt/sources.list.d/trivy.list'
+      - sudo apt-get update -y
+      - sudo apt-get install -y trivy
 
   build-image:
     summary: Builds a Docker image
