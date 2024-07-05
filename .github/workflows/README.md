@@ -6,7 +6,8 @@ This directory contains various GitHub Actions workflow files for automating dif
 
 **File:** `ci_cd_pipeline.yaml`
 
-**Purpose:** This workflow file includes steps for Continuous Integration and Continuous Deployment (CI/CD). It covers the following tasks:
+**Purpose:** 
+This workflow file includes steps for Continuous Integration and Continuous Deployment (CI/CD). It covers the following tasks:
 - Setting up AWS credentials.
 - Building and pushing Docker images to AWS ECR Public.
 - Scanning Docker images for vulnerabilities using Trivy.
@@ -23,7 +24,8 @@ This directory contains various GitHub Actions workflow files for automating dif
 
 **File:** `terraform.yaml`
 
-**Purpose:** This workflow file includes steps for setting up and applying Terraform configurations. It covers the following tasks:
+**Purpose:** 
+This workflow file includes steps for setting up and applying Terraform configurations. It covers the following tasks:
 - Checking out the code.
 - Setting up Terraform using the official GitHub action.
 - Initializing Terraform configuration.
@@ -34,8 +36,11 @@ This directory contains various GitHub Actions workflow files for automating dif
 
 ## Notes
 
-- **Sequential Execution:** Steps in the CI/CD workflow are executed sequentially using the `needs` clause, ensuring the correct order of execution.
-- **Vulnerability Scanning:** Trivy scanning is configured to detect only critical and high-severity vulnerabilities.
-- **Automated Release:** Release steps are triggered only when pushing tags in the specified format.
+- **Sequential Execution:** 
+Steps in the CI/CD workflow are executed sequentially using the `needs` clause, ensuring the correct order of execution.
+- **Vulnerability Scanning:** 
+Trivy scanning is configured to detect only critical and high-severity vulnerabilities.
+- **Automated Release:** 
+Release steps are triggered only when pushing tags in the specified format.
 
 If you have any questions or need assistance with these workflows, please contact the repository administrator.
