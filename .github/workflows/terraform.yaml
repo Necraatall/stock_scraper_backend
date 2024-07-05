@@ -16,32 +16,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
+          aws-region: us-east-1
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
       - name: Terraform Init
         run: terraform init
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
 
       - name: Terraform Plan
         run: terraform plan -out=tfplan
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
 
       - name: Terraform Outputs
         run: terraform output -json > outputs.json
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
 
       - name: Upload Terraform Outputs
         uses: actions/upload-artifact@v2
