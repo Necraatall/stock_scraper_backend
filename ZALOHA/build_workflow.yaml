@@ -5,28 +5,52 @@ on:
     branches:
       - main
       - 'feature/**'
-      - 'bug/**'
-      - 'chore/**'
-  pull_request:
 
 jobs:
   build_and_scan:
-    name: Build and scan
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build an image from Dockerfile
-        run: |
-          docker build -t docker.io/my-organization/my-app:${{ github.sha }} .
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.20.0
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
         with:
-          image-ref: 'docker.io/my-organization/my-app:${{ github.sha }}'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+          go-version: ^1.16
+
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Run unit tests
+        run: go test -v ./...
+
+      - name: Install GoReleaser
+        run: |
+          curl -sL https://git.io/goreleaser | bash
+          goreleaser --version
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y curl gnupg lsb-release
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+          echo 'export PATH=$PATH:/root/.local/bin' >> $GITHUB_ENV
+          trivy --version  # Verify Trivy installation
+
+      - name: Build snapshot
+        run: |
+          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} goreleaser release --snapshot --skip-publish
+
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/Necraatall/stock_scraper_backend:${{ github.sha }} .
+
+      - name: Scan Docker image for vulnerabilities
+        run: |
+          trivy image --severity HIGH,CRITICAL --ignore-unfixed ghcr.io/Necraatall/stock_scraper_backend:${{ github.sha }}
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
