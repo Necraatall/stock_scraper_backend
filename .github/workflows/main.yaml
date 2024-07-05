@@ -11,16 +11,16 @@ on:
 
 jobs:
   setup:
-    uses: .github/workflows/aws-setup.yaml@main
+    uses: Necraatall/stock_scraper_backend/.github/workflows/aws_setup.yaml@main
 
   docker_build_and_push:
     needs: [setup]
-    uses: .github/workflows/docker-build-and-push.yaml@main
+    uses: Necraatall/stock_scraper_backend/.github/workflows/docker_build_and_push.yaml@main
 
   trivy_scan:
     needs: [docker_build_and_push]
-    uses: .github/workflows/trivy.yaml@main
+    uses: Necraatall/stock_scraper_backend/.github/workflows/trivy.yaml@main
 
   terraform_job:
     needs: [setup]
-    uses: .github/workflows/terraform.yaml@main
+    uses: Necraatall/stock_scraper_backend/.github/workflows/terraform.yaml@main
