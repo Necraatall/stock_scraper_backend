@@ -12,9 +12,9 @@ on:
       - main
   workflow_call:
     secrets:
-      AWS_ACCESS_KEY_ID_TECHNICAL_USER:
+      AWS_ACCESS_KEY_TECHNICAL_USER:
         required: true
-      AWS_SECRET_ACCESS_KEY_TECHNICAL_USER:
+      AWS_SECRET_ACCESS_TECHNICAL_USER:
         required: true
 
 jobs:
@@ -28,8 +28,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_TECHNICAL_USER }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_TECHNICAL_USER }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
           aws-region: us-east-1
 
   docker-build-and-push:
