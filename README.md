@@ -1,4 +1,4 @@
-# Lection2 Project
+# Stock Scraper Project
 
 
 ### Description
@@ -50,7 +50,7 @@ brew install go-task/tap/go-task
 
 ##### Set up dependencies
 
-Here is info only for linux mans:
+Here is info only for linux guys:
 ```sh
 task setup-install
 ```
