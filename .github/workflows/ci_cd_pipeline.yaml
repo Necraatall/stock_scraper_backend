@@ -1,15 +1,12 @@
 name: CI/CD Pipeline
 
 on:
-  push:
+  pull_request:
     branches:
       - main
       - 'feature/**'
       - 'bug/**'
       - 'chore/**'
-  pull_request:
-    branches:
-      - main
   workflow_call:
     secrets:
       AWS_ACCESS_KEY_TECHNICAL_USER:
