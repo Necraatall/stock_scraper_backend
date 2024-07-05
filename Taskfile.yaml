@@ -77,7 +77,6 @@ tasks:
       - apt-get update -y
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
       - echo 'export PATH=$PATH:/root/.local/bin' >> ~/.bashrc
-      - /root/.local/bin/trivy --version
       - trivy --version
 
   build-image:
