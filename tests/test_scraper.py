@@ -1,7 +1,6 @@
 # test/test_scraper
 import requests
 from bs4 import BeautifulSoup
-import pytest
 
 def fetch_page_content(url):
     response = requests.get(url)
