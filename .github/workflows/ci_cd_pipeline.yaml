@@ -1039,51 +1039,52 @@ jobs:
   #         path: htmlcov
 
   # TODO: make it for all README.md
-  update-readme:
-    runs-on: ubuntu-latest
-    needs: ruff-scan
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  # make github token and place him on the github secrets
+  # update-readme:
+  #   runs-on: ubuntu-latest
+  #   needs: ruff-scan
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: '3.10'
 
-      - name: Install tree
-        run: sudo apt-get install -y tree
+  #     - name: Install tree
+  #       run: sudo apt-get install -y tree
 
-      - name: Set executable permissions for update_readme_tree.sh
-        run: chmod +x ./update_readme_tree.sh
+  #     - name: Set executable permissions for update_readme_tree.sh
+  #       run: chmod +x ./update_readme_tree.sh
 
-      - name: Update README.md with directory tree
-        run: ./update_readme_tree.sh
+  #     - name: Update README.md with directory tree
+  #       run: ./update_readme_tree.sh
 
-      - name: Get current branch name
-        id: vars
-        run: echo "actual_branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+  #     - name: Get current branch name
+  #       id: vars
+  #       run: echo "actual_branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
 
-      - name: Set git user info
-        run: |
-          git config --local user.email "${{ secrets.GIT_USER_EMAIL || 'actions@github.com' }}"
-          git config --local user.name "${{ secrets.GIT_USER_NAME || 'GitHub Actions' }}"
+  #     - name: Set git user info
+  #       run: |
+  #         git config --local user.email "${{ secrets.GIT_USER_EMAIL || 'actions@github.com' }}"
+  #         git config --local user.name "${{ secrets.GIT_USER_NAME || 'GitHub Actions' }}"
 
-      - name: Commit changes
-        run: |
-          git add README.md
-          git commit -m "Update project README.md with latest directory tree"
-          git push --force origin HEAD:${{ env.actual_branch }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Commit changes
+  #       run: |
+  #         git add README.md
+  #         git commit -m "Update project README.md with latest directory tree"
+  #         git push --force origin HEAD:${{ env.actual_branch }}
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Display README.md contents
-        run: cat README.md
+  #     - name: Display README.md contents
+  #       run: cat README.md
 
   docker-build-and-push:
     name: Docker Build and Push to AWS ECR Public
     runs-on: ubuntu-latest
-    needs: ["setup", "trivy-scan", "ruff-scan", "update-readme"]
+    needs: ["setup", "trivy-scan", "ruff-scan"]
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     steps:
       - name: Checkout code
