@@ -14,6 +14,7 @@ This workflow file includes steps for Continuous Integration and Continuous Depl
 - Running static code analysis with Ruff.
 - Running tests with code coverage using Pytest.
 - Automatically creating a release when a new version is tagged.
+- Updating the README with the latest directory tree structure.
 
 **Triggers:**
 - Pull request to the `main` branch.
@@ -24,8 +25,9 @@ This workflow file includes steps for Continuous Integration and Continuous Depl
 - **AWS Setup:** Configures AWS credentials for subsequent steps.
 - **Docker Build and Push to AWS ECR Public:** Builds and pushes Docker images.
 - **Trivy Scan:** Scans Docker images for vulnerabilities.
-- **Run Ruff:** Performs static code analysis using Ruff.
-- **Run Pytest with Coverage:** Runs tests and collects coverage data using Pytest.
+- **Run Ruff Linter:** Performs static code analysis using Ruff.
+- **Run Tests and Check Coverage:** Runs tests, collects coverage data using Pytest, and generates a coverage badge.
+- **Update README:** Updates the README.md file with the latest directory tree structure.
 - **Release Workflow:** Automatically creates a release when a new version is tagged.
 
 ## Terraform Setup

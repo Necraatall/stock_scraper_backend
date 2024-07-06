@@ -1,5 +1,6 @@
 # Stock Scraper Project
 
+![Coverage](./coverage.svg)
 
 ### Description
 
@@ -126,3 +127,10 @@ This project is licensed under the [Beerware License](https://en.wikipedia.org/w
 ## Note:
 
 ### This project is still under development
+
+#### How the Script Works: update_readme_tree.sh
+
+The script generates the directory structure using tree, and then replaces the content between two ```scss tags with the newly generated structure using awk. Once the process is complete, the result is saved back to README.md.
+Setting Up GitHub Actions
+
+If you want to automate this process on every push to the repository, you can add a GitHub Actions workflow as described earlier to run the update_readme_tree.sh script automatically. This will ensure that the README.md file always contains the current directory structure of the project.
