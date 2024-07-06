@@ -136,9 +136,6 @@
 #     pytest.main()
 
 # tests/test_scraper.py
-import pytest
-import requests
-from bs4 import BeautifulSoup
 from src.scraper import fetch_page_content, parse_stock_table, extract_rows, extract_data_from_row, extract_stock_data
 
 def test_fetch_page_content():
