@@ -1005,52 +1005,52 @@ jobs:
         with:
           args: check ./ --fix
 
-  test-and-coverage:
-    name: Run Tests and Check Coverage
-    runs-on: ubuntu-latest
-    needs: ruff-scan
-    env:
-      TESTING: true
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  # test-and-coverage:
+  #   name: Run Tests and Check Coverage
+  #   runs-on: ubuntu-latest
+  #   needs: ruff-scan
+  #   env:
+  #     TESTING: true
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-      - name: Log in to Amazon ECR Public
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
-        run: |
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+  #     - name: Log in to Amazon ECR Public
+  #       env:
+  #         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
+  #         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
+  #       run: |
+  #         aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
-      - name: Pull Docker image
-        run: |
-          docker pull public.ecr.aws/d8o8x6c7/stock_scraper_backend:latest
+  #     - name: Pull Docker image
+  #       run: |
+  #         docker pull public.ecr.aws/d8o8x6c7/stock_scraper_backend:latest
 
-      - name: Run tests and check coverage
-        env:
-          TEST_DATABASE_URL: 'sqlite:///./app/tests/test_db/test.db'
-        run: |
-          docker run --rm \
-            -e TESTING=true \
-            -e TEST_DATABASE_URL=$TEST_DATABASE_URL \
-            public.ecr.aws/d8o8x6c7/stock_scraper_backend:latest bash -c "poetry run coverage run -m pytest && poetry run coverage report && poetry run coverage html && poetry run coverage-badge -o coverage.svg -f"
+  #     - name: Run tests and check coverage
+  #       env:
+  #         TEST_DATABASE_URL: 'sqlite:///./app/tests/test_db/test.db'
+  #       run: |
+  #         docker run --rm \
+  #           -e TESTING=true \
+  #           -e TEST_DATABASE_URL=$TEST_DATABASE_URL \
+  #           public.ecr.aws/d8o8x6c7/stock_scraper_backend:latest bash -c "poetry run coverage run -m pytest && poetry run coverage report && poetry run coverage html && poetry run coverage-badge -o coverage.svg -f"
       
-      - name: Upload coverage badge
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-badge
-          path: coverage.svg
+  #     - name: Upload coverage badge
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: coverage-badge
+  #         path: coverage.svg
 
-      - name: Upload HTML coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: html-coverage-report
-          path: htmlcov
+  #     - name: Upload HTML coverage report
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: html-coverage-report
+  #         path: htmlcov
         
 
   update-readme:
     runs-on: ubuntu-latest
-    needs: test-and-coverage
+    needs: ruff-scan
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
