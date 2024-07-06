@@ -60,36 +60,29 @@ tasks:
       - poetry install --with dev
       - poetry update
 
-  install-trivy:
+  local-install-trivy:
     summary: Installs Trivy vulnerability scanner
     desc: |
-      This task performs the following steps to install Trivy vulnerability scanner:
-      1. Installs necessary packages (wget, apt-transport-https, gnupg).
-      2. Downloads and stores the public key for the Trivy repository.
-      3. Adds the Trivy repository to the APT sources list.
-      4. Updates the list of available packages.
-      5. Installs Trivy.
+      This task installs the Trivy vulnerability scanner by performing the following steps:
+      1. Updates the list of available packages.
+      2. Installs necessary packages (wget, apt-transport-https, gnupg).
+      3. Downloads and stores the public key for the Trivy repository.
+      4. Adds the Trivy repository to the APT sources list with proper permissions.
+      5. Updates the list of available packages again to include the new repository.
+      6. Installs Trivy using the official installation script.
+      7. Adds Trivy to the system PATH.
+      8. Verifies the installation by checking the Trivy version.
     cmds:
-      - apt-get update -y
-      - apt-get install -y wget apt-transport-https gnupg
-      - wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-      - sh -c 'echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" > /etc/apt/sources.list.d/trivy.list'
-      - apt-get update -y
-      - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+      - sudo apt-get update -y
+      - sudo apt-get install -y wget apt-transport-https gnupg
+      - sudo wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+      - sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" > /etc/apt/sources.list.d/trivy.list'
+      - sudo apt-get update -y
+      - sudo curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh
       - echo 'export PATH=$PATH:/root/.local/bin' >> ~/.bashrc
       - trivy --version
 
-  build-image:
-    summary: Builds a Docker image
-    deps:
-      - load-env
-    desc: |
-      This task performs the following steps to build a Docker image:
-      1. Builds a Docker image using the Dockerfile in the root directory.
-    cmds:
-      - docker build --no-cache -t ${DOCKER_IMAGE_NAME} .
-
-  trivy-scan:
+  local-trivy-scan:
     summary: Scans a Docker image using Trivy
     deps:
       - load-env
@@ -99,7 +92,15 @@ tasks:
     cmds:
       - trivy image --severity HIGH,CRITICAL --ignore-unfixed ${DOCKER_IMAGE_NAME}
 
-  ruff:
+  local-install-ruff:
+    summary: Installs Ruff linter
+    desc: |
+      This task installs the Ruff linter by performing the following steps:
+      1. Installs Ruff using pip.
+    cmds:
+      - pip install ruff
+
+  local-ruff-scan:
     summary: Runs Ruff linter
     desc: |
       This task performs the following steps to run Ruff linter:
@@ -108,13 +109,13 @@ tasks:
     cmds:
       - ruff check ./src
 
-  run-pytest:
+  local-pytest-scan:
     summary: Runs pytest
     desc: |
       This task performs the following steps to run pytest:
       1. Runs pytest against the tests.
     cmds:
-      - pytest --cov=lection2 tests/
+      - pytest --cov=lection2 ./src
 
 # this is setup for newones on python
   install-docker:
@@ -134,14 +135,6 @@ tasks:
       1. Uses Docker Compose to start the containers defined in docker-compose.yml.
     cmds:
       - docker-compose up -d
-
-  initialize-database:
-    summary: Initializes the database using Alembic
-    desc: |
-      This task performs the following steps to initialize the database:
-      1. Applies the latest database migrations using Alembic.
-    cmds:
-      - alembic upgrade head
 
   setup-install:
     desc: "Setup the project"
