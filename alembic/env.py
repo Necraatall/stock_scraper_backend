@@ -19,8 +19,8 @@ fileConfig(config.config_file_name)
 target_metadata = Base.metadata
 
 # Get the URL from the environment variables
-DATABASE_URL = os.getenv('DATABASE_URL')
 ALEMBIC_URL = os.getenv('ALEMBIC_URL')
+
 # Set DATABASE_URL based on the TESTING environment variable
 if os.getenv('TESTING') == 'true':
     DATABASE_URL = os.getenv('TEST_DATABASE_URL')
