@@ -2,16 +2,15 @@ provider "aws" {
   region = var.region
 }
 
-resource "aws_s3_bucket" "example" {
+data "aws_s3_bucket" "stock_scraper_bucket" {
   bucket = var.bucket_name
-  acl    = "private"
 }
 
-resource "aws_instance" "example" {
+resource "aws_instance" "stock_scraper_instance" {
   ami           = var.ami
   instance_type = var.instance_type
 
   tags = {
-    Name = "ExampleInstance"
+    Name = "StockScraperInstance"
   }
 }

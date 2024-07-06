@@ -1,7 +1,8 @@
+# terraform/backend.tf
 terraform {
   backend "s3" {
-    bucket         = "your-terraform-state-bucket"
-    key            = "path/to/terraform.tfstate"
-    region         = "us-east-1"
+    bucket = "terraform-stock-scraper-state-bucket"
+    key    = "terraform/state/terraform.tfstate"
+    region = "us-east-1"
   }
 }
