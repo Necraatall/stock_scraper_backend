@@ -33,4 +33,3 @@ COPY . .
 # Install Python dependencies using Taskfile
 RUN ./bin/task install-poetry
 RUN ./bin/task install-dependencies
-RUN ./bin/task install-trivy
