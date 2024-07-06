@@ -1,191 +1,153 @@
-# # test/test_scraper
-# import requests
-# from bs4 import BeautifulSoup
+# src/scraper.py
+import os
+from sqlalchemy import (
+    Table, 
+    MetaData, 
+    Column, 
+    Integer, 
+    String, 
+    Float, 
+    DateTime)
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+import requests
+from bs4 import BeautifulSoup
+from datetime import datetime, timezone
+from src.models import Stock, Base
 
-# def fetch_page_content(url):
-#     response = requests.get(url)
-#     return response.text
+# Load environment variables
+load_dotenv()
 
-# def parse_stock_table(html_content):
-#     soup = BeautifulSoup(html_content, 'html.parser')
-#     table = soup.find('table', {'class': 'pd huste leftcolumnwidth r rowcl'})
-#     if table is None:
-#         raise ValueError("Could not find the stock table on the page")
-#     return table
+DATABASE_URL = os.getenv(
+    'DATABASE_URL', 'sqlite:///./test/testdb/test.db'
+    )  # Default to SQLite for testing
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+metadata = MetaData()
 
-# def extract_rows(table):
-#     rows = table.find_all('tr')[1:]
-#     if len(rows) == 0:
-#         raise ValueError("The stock table is empty")
-#     return rows
+def fetch_page_content(url: str) -> str:
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.text
 
-# def extract_data_from_row(row):
-#     cols = row.find_all('td')
-#     if len(cols) < 8:
-#         raise ValueError("Row does not contain enough data")
+def parse_html(html_content: str):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    table = soup.find('table', {'class': 'pd huste leftcolumnwidth r rowcl'})
+    if table is None:
+        raise ValueError("Could not find the stock table on the page")
+    return table
 
-#     name_td = cols[0].find('a')
-#     if name_td is None or 'title' not in name_td.attrs:
-#         raise ValueError("Name column does not contain a valid title attribute")
+def extract_rows(table) -> list:
+    return table.find_all('tr')[1:]  # Skip the header row
 
-#     name = name_td['title']
-#     if not name:
-#         raise ValueError("Name extracted from title is empty")
+def parse_float(text: str) -> float:
+    try:
+        return float(text.replace(',', ''))
+    except ValueError:
+        return 0.0  # or any default value
 
-#     return {
-#         'name': name,
-#         'price': cols[1].text.strip(),
-#         'change': cols[2].text.strip(),
-#         'volume': cols[3].text.strip(),
-#         'buy': cols[4].text.strip(),
-#         'sell': cols[5].text.strip(),
-#         'min': cols[6].text.strip(),
-#         'max': cols[7].text.strip(),
-#         'time': cols[8].text.strip() if len(cols) > 8 else None,  # Some rows might not have this column
-#     }
+def parse_int(text: str) -> int:
+    try:
+        return int(text.replace(' ', '').replace(',', ''))
+    except ValueError:
+        return 0  # or any default value
 
-# def extract_stock_data(table):
-#     rows = extract_rows(table)
-#     stock_data_list = [extract_data_from_row(row) for row in rows]
-#     return stock_data_list
-
-# def test_stock_table_exists():
-#     url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
-#     html_content = fetch_page_content(url)
-#     table = parse_stock_table(html_content)
-#     stock_data_list = extract_stock_data(table)
-
-#     # Print the extracted data
-#     for stock_data in stock_data_list:
-#         print(stock_data)
-
-
-
-# # src/test_scraper.py
-# import sys
-# import os
-# import pytest
-# from sqlalchemy import create_engine
-# from sqlalchemy.orm import sessionmaker
-# from src.models import Base, Stock
-
-# # Přidání cesty k modulu app do sys.path
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
-
-# # Nastavení proměnné prostředí DATABASE_URL na SQLite pro testování
-# DATABASE_URL = "sqlite:///:memory:"
-
-# from src.scraper import save_stock_data, get_stock_data
-
-# # Funkce pro získání databázové URL, umožňující přepsání v testovacím prostředí
-# def get_database_url():
-#     return os.getenv('DATABASE_URL', 'postgresql://postgres:root@db:5432/stock_db')
-
-# # Použití get_database_url pro nastavení testovací databáze pomocí SQLite in-memory
-# DATABASE_URL = get_database_url()
-# engine = create_engine(DATABASE_URL)
-# SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# @pytest.fixture(scope="module")
-# def setup_database():
-#     # Vytvoření tabulek v testovací databázi
-#     Base.metadata.create_all(bind=engine)
-#     yield
-#     Base.metadata.drop_all(bind=engine)
-
-# @pytest.fixture(scope="function")
-# def db_session():
-#     session = SessionLocal()
-#     yield session
-#     session.close()
-
-# def test_get_stock_data():
-#     stock_data = get_stock_data()
-#     assert len(stock_data) > 0, "No stock data scraped"
-#     for data in stock_data:
-#         assert 'name' in data
-#         assert 'price' in data
-#         assert 'change' in data
-#         assert 'volume' in data
-#         assert 'buy' in data
-#         assert 'sell' in data
-#         assert 'min' in data
-#         assert 'max' in data
-#         assert 'change_time' in data
-
-# def test_save_stock_data(setup_database, db_session):
-#     # Uložení scrapovaných dat do testovací databáze
-#     save_stock_data()
+def parse_row(row) -> dict:
+    columns = row.find_all('td')
+    if len(columns) < 8:
+        return {}  # Skip incomplete rows and return empty dict
     
-#     # Kontrola, zda jsou data v databázi
-#     stocks = db_session.query(Stock).all()
-#     assert len(stocks) > 0, "No stock data saved to the database"
-#     for stock in stocks:
-#         assert stock.name is not None
-#         assert stock.price is not None
-#         assert stock.change is not None
-#         assert stock.volume is not None
-#         assert stock.buy is not None
-#         assert stock.sell is not None
-#         assert stock.min is not None
-#         assert stock.max is not None
-#         assert stock.change_time is not None
+    name_td = columns[0].find('a')
+    if name_td is None or 'title' not in name_td.attrs:
+        return {}  # Skip rows with invalid name column and return empty dict
+    
+    stock = {
+        "name": name_td['title'],
+        "price": parse_float(
+            columns[1].text.strip()) if columns[1].text.strip() else 0.0,
+        "change": columns[2].text.strip() if len(columns) > 2 else "",
+        "volume": parse_int(columns[3].text.strip()) if columns[3].text.strip() else 0,
+        "buy": parse_float(
+            columns[4].text.strip()) if columns[4].text.strip() else 0.0,
+        "sell": parse_float(columns[5].text.strip()) if columns[5].text.strip() else 0.0,
+        "min": parse_float(columns[6].text.strip()) if columns[6].text.strip() else 0.0,
+        "max": parse_float(columns[7].text.strip()) if columns[7].text.strip() else 0.0,
+        "change_time": columns[8].text.strip() if len(columns) > 8 else None,
+    }
+    return stock
 
-# # Spuštění testů
-# if __name__ == "__main__":
-#     pytest.main()
-
-# tests/test_scraper.py
-from src.scraper import fetch_page_content, parse_stock_table, extract_rows, extract_data_from_row, extract_stock_data
-
-def test_fetch_page_content():
-    url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
+def get_stock_data() -> list:
+    url = "https://www.kurzy.cz/akcie-cz/burza/"
     html_content = fetch_page_content(url)
-    assert html_content is not None
-    assert len(html_content) > 0
-
-def test_parse_stock_table():
-    url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
-    html_content = fetch_page_content(url)
-    table = parse_stock_table(html_content)
-    assert table is not None
-
-def test_extract_rows():
-    url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
-    html_content = fetch_page_content(url)
-    table = parse_stock_table(html_content)
+    table = parse_html(html_content)
     rows = extract_rows(table)
-    assert len(rows) > 0
 
-def test_extract_data_from_row():
-    url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
-    html_content = fetch_page_content(url)
-    table = parse_stock_table(html_content)
-    rows = extract_rows(table)
-    row_data = extract_data_from_row(rows[0])
-    assert 'name' in row_data
-    assert 'price' in row_data
-    assert 'change' in row_data
-    assert 'volume' in row_data
-    assert 'buy' in row_data
-    assert 'sell' in row_data
-    assert 'min' in row_data
-    assert 'max' in row_data
-    assert 'time' in row_data or row_data['time'] is None
+    stock_data = []
+    for row in rows:
+        stock = parse_row(row)
+        if stock:
+            stock_data.append(stock)
+    
+    return stock_data
 
-def test_extract_stock_data():
-    url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
-    html_content = fetch_page_content(url)
-    table = parse_stock_table(html_content)
-    stock_data_list = extract_stock_data(table)
-    assert len(stock_data_list) > 0
-    for stock_data in stock_data_list:
-        assert 'name' in stock_data
-        assert 'price' in stock_data
-        assert 'change' in stock_data
-        assert 'volume' in stock_data
-        assert 'buy' in stock_data
-        assert 'sell' in stock_data
-        assert 'min' in stock_data
-        assert 'max' in stock_data
-        assert 'time' in stock_data or stock_data['time'] is None
+def create_stock_table(original_name: str):
+    table_name = original_name.replace(
+        "akcie_", "other_stocks_"
+        ).split(",")[0].replace(" ", "_").lower()
+    market_value = original_name.split('_')[-1]
+    stock_type_value = original_name.split('_')[0].replace("_", " ")
+
+    table = Table(
+        table_name, metadata,
+        Column('id', Integer, primary_key=True),
+        Column('date', DateTime, default=datetime.now(timezone.utc)),
+        Column('price', Float),
+        Column('volume', Integer),
+        Column('min', Float),
+        Column('max', Float),
+        Column('market', String, default=market_value),
+        Column('stock_type', String, default=stock_type_value),
+        extend_existing=True
+    )
+    metadata.create_all(engine)  # Create the table if it doesn't exist
+    return table
+
+def save_stock_data():
+    session = SessionLocal()
+    Base.metadata.create_all(bind=engine)  # Ensure the main stocks table exists
+    stock_data = get_stock_data()
+
+    for data in stock_data:
+        stock = Stock(
+            name=data["name"],
+            price=data["price"],
+            change=data["change"],
+            volume=data["volume"],
+            buy=data["buy"],
+            sell=data["sell"],
+            min=data["min"],
+            max=data["max"],
+            change_time=data["change_time"],
+            record_time=datetime.now(timezone.utc)
+        )
+        session.add(stock)
+
+        # Create a new table for the stock if it doesn't exist
+        original_name = data["name"]
+        stock_table = create_stock_table(original_name)
+
+        # Insert data into the stock-specific table
+        insert_statement = stock_table.insert().values(
+            date=datetime.now(timezone.utc),
+            price=data["price"],
+            volume=data["volume"],
+            min=data["min"],
+            max=data["max"],
+            market="online burza",
+            stock_type="akcie"
+        )
+        session.execute(insert_statement)
+    
+    session.commit()
+    session.close()
