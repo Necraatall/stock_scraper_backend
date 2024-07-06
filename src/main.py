@@ -25,7 +25,11 @@ def scrape_data(db: Session = Depends(get_db)) -> Dict[str, str]:
         raise HTTPException(status_code=404, detail=str(e))
 
 @app.get("/stocks", response_model=List[StockSchema])
-def get_stocks(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)) -> List[StockSchema]:
+def get_stocks(
+    skip: int = 0, 
+    limit: int = 10, 
+    db: Session = Depends(get_db)
+    ) -> List[StockSchema]:
     stocks = db.query(StockModel).offset(skip).limit(limit).all()
     return stocks
 

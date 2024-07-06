@@ -28,7 +28,8 @@ def test_database_creation(db_engine):
     """Test to check if the expected table 'users' exists in the database."""
     try:
         connection = db_engine.connect()
-        result = connection.execute("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public';")
+        result = connection.execute(
+            "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public';")
         tables = [row[0] for row in result]
         assert 'users' in tables, "Table 'users' was not found in the database"
     except OperationalError:
