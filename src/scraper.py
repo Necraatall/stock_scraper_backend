@@ -61,8 +61,10 @@ def parse_row(row) -> dict:
         "volume": parse_int(columns[3].text.strip()) if columns[3].text.strip() else 0,
         "buy": parse_float(
             columns[4].text.strip()) if columns[4].text.strip() else 0.0,
-        "sell": parse_float(columns[5].text.strip()) if columns[5].text.strip() else 0.0,
-        "min": parse_float(columns[6].text.strip()) if columns[6].text.strip() else 0.0,
+        "sell": parse_float(
+            columns[5].text.strip()) if columns[5].text.strip() else 0.0,
+        "min": parse_float(
+            columns[6].text.strip()) if columns[6].text.strip() else 0.0,
         "max": parse_float(columns[7].text.strip()) if columns[7].text.strip() else 0.0,
         "change_time": columns[8].text.strip() if len(columns) > 8 else None,
     }
