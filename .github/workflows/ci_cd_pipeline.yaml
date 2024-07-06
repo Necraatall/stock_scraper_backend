@@ -902,6 +902,10 @@
 #           sarif_file: 'trivy-results.sarif'
 
 
+
+
+
+
 # ########################################################
 # ## pytest runs on docker-build-and-push image ##########
 # ########################################################
@@ -918,6 +922,9 @@
 #     není správně nastavený nebo není dostupný. 
 #     Během testování by měla být použita lokální SQLite 
 #     databáze, kterou lze snadno nastavit a použít.
+
+# reseni updatu tree v readme... nutno udelat pro kazde readme
+# pred tim vsak doladit
 # ########################################################
 
 name: CI/CD Pipeline
@@ -929,6 +936,8 @@ on:
       - 'feature/**'
       - 'bug/**'
       - 'chore/**'
+  workflow_dispatch:
+
   workflow_call:
     secrets:
       AWS_ACCESS_KEY_TECHNICAL_USER:
@@ -951,33 +960,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
           aws-region: us-east-1
 
-  docker-build-and-push:
-    name: Docker Build and Push to AWS ECR Public
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Log in to Amazon ECR Public
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
-        run: |
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-
-      - name: Build, tag, and push Docker image to Amazon ECR Public
-        env:
-          ECR_REPOSITORY: "public.ecr.aws/d8o8x6c7/stock_scraper_backend"
-          IMAGE_TAG: latest
-        run: |
-          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REPOSITORY:$IMAGE_TAG
-
   trivy-scan:
     name: Trivy Scan
     runs-on: ubuntu-latest
-    needs: docker-build-and-push
+    needs: setup
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -1005,8 +991,11 @@ jobs:
         with:
           args: check ./ --fix
 
+  # TODO: revision of db, models, migrate,
+  # scraper on docker-compose, redis - need create,
+  # 
   # NOT important for the DevOps course
-  # will manage it afther done graduation tasks
+  # will manage it after done graduation tasks
   # test-and-coverage:
   #   name: Run Tests and Check Coverage
   #   runs-on: ubuntu-latest
@@ -1049,6 +1038,7 @@ jobs:
   #         name: html-coverage-report
   #         path: htmlcov
 
+  # TODO: make it for all README.md
   update-readme:
     runs-on: ubuntu-latest
     needs: ruff-scan
@@ -1072,34 +1062,53 @@ jobs:
 
       - name: Get current branch name
         id: vars
-        run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+        run: echo "actual_branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
 
       - name: Set git user info
         run: |
-          git config --local user.email "${GIT_USER_EMAIL:-actions@github.com}"
-          git config --local user.name "${GIT_USER_NAME:-GitHub Actions}"
+          git config --local user.email "${{ secrets.GIT_USER_EMAIL || 'actions@github.com' }}"
+          git config --local user.name "${{ secrets.GIT_USER_NAME || 'GitHub Actions' }}"
 
       - name: Commit changes
         run: |
           git add README.md
           git commit -m "Update project README.md with latest directory tree"
-          git push --force origin HEAD:${{ env.branch }}
+          git push --force origin HEAD:${{ env.actual_branch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Merge changes to main
-        run: |
-          git checkout main
-          git pull origin main
-          git merge --no-ff ${{ env.branch }}
-          git push origin main
+      - name: Display README.md contents
+        run: cat README.md
+
+  docker-build-and-push:
+    name: Docker Build and Push to AWS ECR Public
+    runs-on: ubuntu-latest
+    needs: ["setup", "trivy-scan", "ruff-scan", "update-readme"]
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Amazon ECR Public
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Build, tag, and push Docker image to Amazon ECR Public
+        env:
+          ECR_REPOSITORY: "public.ecr.aws/d8o8x6c7/stock_scraper_backend"
+          IMAGE_TAG: latest
+        run: |
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REPOSITORY:$IMAGE_TAG
 
   release:
     name: Release Workflow
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs: docker-build-and-push
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
