@@ -1,7 +1,6 @@
 # src/scraper.py
 import os
 from sqlalchemy import Table, MetaData, Column, Integer, String, Float, DateTime
-from sqlalchemy.exc import ProgrammingError
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

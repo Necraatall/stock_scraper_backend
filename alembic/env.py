@@ -1,38 +1,37 @@
-from logging.config import fileConfig
+# alembic/env.py
 import os
-from sqlalchemy import engine_from_config, create_engine
+from src.models import Base
+from logging.config import fileConfig
+from sqlalchemy import create_engine
 from alembic import context
 from dotenv import load_dotenv
 
-# Načtení proměnných prostředí z .env souboru
+# Load environment variables from .env file
 load_dotenv()
 
-# Tento import závisí na tom, kde máte definovaný váš Base objekt
-from src.models import Base
-
-# Načtení config souboru
+# Load the Alembic configuration file
 config = context.config
 
-# Konfigurace logování z config souboru
+# Configure logging from the config file
 fileConfig(config.config_file_name)
 
-# Nastavení target_metadata pro autogenerování
+# Set the target metadata for autogeneration
 target_metadata = Base.metadata
 
-# Získání URL z prostředí
+# Get the URL from the environment variables
 DATABASE_URL = os.getenv('DATABASE_URL')
 ALEMBIC_URL = os.getenv('ALEMBIC_URL')
 
-# Funkce pro vytvoření engine s pool_pre_ping
+# Function to create the engine with pool_pre_ping
 def get_engine():
     return create_engine(
         ALEMBIC_URL,
         pool_pre_ping=True,
     )
 
-# Funkce pro offline migrace
+# Function for running migrations in offline mode
 def run_migrations_offline():
-    """Spustí migrace v offline módu."""
+    """Run migrations in offline mode."""
     context.configure(
         url=ALEMBIC_URL, target_metadata=target_metadata, literal_binds=True
     )
@@ -40,9 +39,9 @@ def run_migrations_offline():
     with context.begin_transaction():
         context.run_migrations()
 
-# Funkce pro online migrace
+# Function for running migrations in online mode
 def run_migrations_online():
-    """Spustí migrace v online módu."""
+    """Run migrations in online mode."""
     connectable = get_engine()
 
     with connectable.connect() as connection:

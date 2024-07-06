@@ -1,64 +1,63 @@
-# test/test_scraper
-import requests
-from bs4 import BeautifulSoup
-import pytest
+# # test/test_scraper
+# import requests
+# from bs4 import BeautifulSoup
 
-def fetch_page_content(url):
-    response = requests.get(url)
-    return response.text
+# def fetch_page_content(url):
+#     response = requests.get(url)
+#     return response.text
 
-def parse_stock_table(html_content):
-    soup = BeautifulSoup(html_content, 'html.parser')
-    table = soup.find('table', {'class': 'pd huste leftcolumnwidth r rowcl'})
-    if table is None:
-        raise ValueError("Could not find the stock table on the page")
-    return table
+# def parse_stock_table(html_content):
+#     soup = BeautifulSoup(html_content, 'html.parser')
+#     table = soup.find('table', {'class': 'pd huste leftcolumnwidth r rowcl'})
+#     if table is None:
+#         raise ValueError("Could not find the stock table on the page")
+#     return table
 
-def extract_rows(table):
-    rows = table.find_all('tr')[1:]
-    if len(rows) == 0:
-        raise ValueError("The stock table is empty")
-    return rows
+# def extract_rows(table):
+#     rows = table.find_all('tr')[1:]
+#     if len(rows) == 0:
+#         raise ValueError("The stock table is empty")
+#     return rows
 
-def extract_data_from_row(row):
-    cols = row.find_all('td')
-    if len(cols) < 8:
-        raise ValueError("Row does not contain enough data")
+# def extract_data_from_row(row):
+#     cols = row.find_all('td')
+#     if len(cols) < 8:
+#         raise ValueError("Row does not contain enough data")
 
-    name_td = cols[0].find('a')
-    if name_td is None or 'title' not in name_td.attrs:
-        raise ValueError("Name column does not contain a valid title attribute")
+#     name_td = cols[0].find('a')
+#     if name_td is None or 'title' not in name_td.attrs:
+#         raise ValueError("Name column does not contain a valid title attribute")
 
-    name = name_td['title']
-    if not name:
-        raise ValueError("Name extracted from title is empty")
+#     name = name_td['title']
+#     if not name:
+#         raise ValueError("Name extracted from title is empty")
 
-    return {
-        'name': name,
-        'price': cols[1].text.strip(),
-        'change': cols[2].text.strip(),
-        'volume': cols[3].text.strip(),
-        'buy': cols[4].text.strip(),
-        'sell': cols[5].text.strip(),
-        'min': cols[6].text.strip(),
-        'max': cols[7].text.strip(),
-        'time': cols[8].text.strip() if len(cols) > 8 else None,  # Some rows might not have this column
-    }
+#     return {
+#         'name': name,
+#         'price': cols[1].text.strip(),
+#         'change': cols[2].text.strip(),
+#         'volume': cols[3].text.strip(),
+#         'buy': cols[4].text.strip(),
+#         'sell': cols[5].text.strip(),
+#         'min': cols[6].text.strip(),
+#         'max': cols[7].text.strip(),
+#         'time': cols[8].text.strip() if len(cols) > 8 else None,  # Some rows might not have this column
+#     }
 
-def extract_stock_data(table):
-    rows = extract_rows(table)
-    stock_data_list = [extract_data_from_row(row) for row in rows]
-    return stock_data_list
+# def extract_stock_data(table):
+#     rows = extract_rows(table)
+#     stock_data_list = [extract_data_from_row(row) for row in rows]
+#     return stock_data_list
 
-def test_stock_table_exists():
-    url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
-    html_content = fetch_page_content(url)
-    table = parse_stock_table(html_content)
-    stock_data_list = extract_stock_data(table)
+# def test_stock_table_exists():
+#     url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
+#     html_content = fetch_page_content(url)
+#     table = parse_stock_table(html_content)
+#     stock_data_list = extract_stock_data(table)
 
-    # Print the extracted data
-    for stock_data in stock_data_list:
-        print(stock_data)
+#     # Print the extracted data
+#     for stock_data in stock_data_list:
+#         print(stock_data)
 
 
 
@@ -136,3 +135,60 @@ def test_stock_table_exists():
 # if __name__ == "__main__":
 #     pytest.main()
 
+# tests/test_scraper.py
+import pytest
+import requests
+from bs4 import BeautifulSoup
+from src.scraper import fetch_page_content, parse_stock_table, extract_rows, extract_data_from_row, extract_stock_data
+
+def test_fetch_page_content():
+    url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
+    html_content = fetch_page_content(url)
+    assert html_content is not None
+    assert len(html_content) > 0
+
+def test_parse_stock_table():
+    url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
+    html_content = fetch_page_content(url)
+    table = parse_stock_table(html_content)
+    assert table is not None
+
+def test_extract_rows():
+    url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
+    html_content = fetch_page_content(url)
+    table = parse_stock_table(html_content)
+    rows = extract_rows(table)
+    assert len(rows) > 0
+
+def test_extract_data_from_row():
+    url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
+    html_content = fetch_page_content(url)
+    table = parse_stock_table(html_content)
+    rows = extract_rows(table)
+    row_data = extract_data_from_row(rows[0])
+    assert 'name' in row_data
+    assert 'price' in row_data
+    assert 'change' in row_data
+    assert 'volume' in row_data
+    assert 'buy' in row_data
+    assert 'sell' in row_data
+    assert 'min' in row_data
+    assert 'max' in row_data
+    assert 'time' in row_data or row_data['time'] is None
+
+def test_extract_stock_data():
+    url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
+    html_content = fetch_page_content(url)
+    table = parse_stock_table(html_content)
+    stock_data_list = extract_stock_data(table)
+    assert len(stock_data_list) > 0
+    for stock_data in stock_data_list:
+        assert 'name' in stock_data
+        assert 'price' in stock_data
+        assert 'change' in stock_data
+        assert 'volume' in stock_data
+        assert 'buy' in stock_data
+        assert 'sell' in stock_data
+        assert 'min' in stock_data
+        assert 'max' in stock_data
+        assert 'time' in stock_data or stock_data['time'] is None
