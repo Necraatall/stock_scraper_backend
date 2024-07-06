@@ -5,7 +5,7 @@ from src.models import Base, Stock
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = 'sqlite:///./test.db'
+DATABASE_URL = 'sqlite:///./test_db/test.db'
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -19,6 +19,7 @@ def setup_database():
 
 @pytest.fixture(scope="function")
 def db_session():
+    """Create a new database session for a test."""
     session = SessionLocal()
     yield session
     session.close()
@@ -41,7 +42,6 @@ def test_get_stock_data():
 def test_save_stock_data(setup_database, db_session):
     """Test to check if scraped stock data is saved to the database."""
     save_stock_data()
-    
     # Verify data is saved in the main table
     stocks = db_session.query(Stock).all()
     assert len(stocks) > 0, "No stock data saved to the database"

@@ -1,6 +1,14 @@
 # src/scraper.py
 import os
-from sqlalchemy import Table, MetaData, Column, Integer, String, Float, DateTime, create_engine
+from sqlalchemy import (
+  Table, 
+  MetaData, 
+  Column, 
+  Integer, 
+  String, 
+  Float, 
+  DateTime, 
+  create_engine)
 from dotenv import load_dotenv
 from sqlalchemy.orm import sessionmaker
 import requests
@@ -60,12 +68,16 @@ def parse_row(row) -> dict:
     
     stock = {
         "name": name_td['title'],
-        "price": parse_float(columns[1].text.strip()) if columns[1].text.strip() else 0.0,
+        "price": parse_float(
+            columns[1].text.strip()) if columns[1].text.strip() else 0.0,
         "change": columns[2].text.strip() if len(columns) > 2 else "",
         "volume": parse_int(columns[3].text.strip()) if columns[3].text.strip() else 0,
-        "buy": parse_float(columns[4].text.strip()) if columns[4].text.strip() else 0.0,
-        "sell": parse_float(columns[5].text.strip()) if columns[5].text.strip() else 0.0,
-        "min": parse_float(columns[6].text.strip()) if columns[6].text.strip() else 0.0,
+        "buy": parse_float(
+            columns[4].text.strip()) if columns[4].text.strip() else 0.0,
+        "sell": parse_float(
+            columns[5].text.strip()) if columns[5].text.strip() else 0.0,
+        "min": parse_float(
+            columns[6].text.strip()) if columns[6].text.strip() else 0.0,
         "max": parse_float(columns[7].text.strip()) if columns[7].text.strip() else 0.0,
         "change_time": columns[8].text.strip() if len(columns) > 8 else None,
     }
@@ -88,7 +100,9 @@ def get_stock_data() -> list:
 
 # Create stock table
 def create_stock_table(original_name: str):
-    table_name = original_name.replace("akcie_", "other_stocks_").split(",")[0].replace(" ", "_").lower()
+    table_name = original_name.replace(
+        "akcie_", "other_stocks_"
+        ).split(",")[0].replace(" ", "_").lower()
     market_value = original_name.split('_')[-1]
     stock_type_value = original_name.split('_')[0].replace("_", " ")
 
