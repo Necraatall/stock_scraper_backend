@@ -1,8 +1,15 @@
 # src/scraper.py
 import os
-from sqlalchemy import Table, MetaData, Column, Integer, String, Float, DateTime
+from sqlalchemy import (
+  Table, 
+  MetaData, 
+  Column, 
+  Integer, 
+  String, 
+  Float, 
+  DateTime, 
+  create_engine)
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import requests
 from bs4 import BeautifulSoup
@@ -12,16 +19,18 @@ from src.models import Stock, Base
 # Load environment variables
 load_dotenv()
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./test.db')
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 metadata = MetaData()
 
+# Fetch page content
 def fetch_page_content(url: str) -> str:
     response = requests.get(url)
     response.raise_for_status()
     return response.text
 
+# Parse HTML content
 def parse_html(html_content: str):
     soup = BeautifulSoup(html_content, 'html.parser')
     table = soup.find('table', {'class': 'pd huste leftcolumnwidth r rowcl'})
@@ -29,21 +38,25 @@ def parse_html(html_content: str):
         raise ValueError("Could not find the stock table on the page")
     return table
 
+# Extract rows from table
 def extract_rows(table) -> list:
     return table.find_all('tr')[1:]  # Skip the header row
 
+# Parse float value
 def parse_float(text: str) -> float:
     try:
         return float(text.replace(',', ''))
     except ValueError:
         return 0.0  # or any default value
 
+# Parse integer value
 def parse_int(text: str) -> int:
     try:
         return int(text.replace(' ', '').replace(',', ''))
     except ValueError:
         return 0  # or any default value
 
+# Parse row data
 def parse_row(row) -> dict:
     columns = row.find_all('td')
     if len(columns) < 8:
@@ -70,6 +83,7 @@ def parse_row(row) -> dict:
     }
     return stock
 
+# Get stock data from webpage
 def get_stock_data() -> list:
     url = "https://www.kurzy.cz/akcie-cz/burza/"
     html_content = fetch_page_content(url)
@@ -84,6 +98,7 @@ def get_stock_data() -> list:
     
     return stock_data
 
+# Create stock table
 def create_stock_table(original_name: str):
     table_name = original_name.replace(
         "akcie_", "other_stocks_"
@@ -106,6 +121,7 @@ def create_stock_table(original_name: str):
     metadata.create_all(engine)  # Create the table if it doesn't exist
     return table
 
+# Save stock data to database
 def save_stock_data():
     session = SessionLocal()
     Base.metadata.create_all(bind=engine)  # Ensure the main stocks table exists
