@@ -1,11 +1,11 @@
-# tests/test_database.py
+# tests/test_healthcheck.py
 import os
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
-# Assuming you have environment variables set for database connection
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/testdb")
+# Use DATABASE_URL for PostgreSQL database
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 @pytest.fixture(scope='module')
 def db_engine():

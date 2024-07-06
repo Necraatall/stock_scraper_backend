@@ -4,8 +4,10 @@ from src.scraper import save_stock_data, get_stock_data
 from src.models import Base, Stock
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import os
 
-DATABASE_URL = 'sqlite:///./test.db'
+# Use TEST_DATABASE_URL for SQLite database
+DATABASE_URL = os.getenv('TEST_DATABASE_URL')
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
