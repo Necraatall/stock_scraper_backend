@@ -80,6 +80,10 @@ jobs:
 
       - name: Run Ruff
         uses: chartboost/ruff-action@v1
+        with:
+          version: 0.0.259
+          args: check --fix
+          src: "./"
 
   run-pytest-with-coverage:
     name: Run Pytest with Coverage
