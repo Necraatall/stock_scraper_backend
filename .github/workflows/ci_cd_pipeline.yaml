@@ -1048,7 +1048,6 @@ jobs:
   #       with:
   #         name: html-coverage-report
   #         path: htmlcov
-        
 
   update-readme:
     runs-on: ubuntu-latest
@@ -1071,16 +1070,34 @@ jobs:
       - name: Update README.md with directory tree
         run: ./update_readme_tree.sh
 
+      - name: Get current branch name
+        id: vars
+        run: echo "##[set-output name=branch;]${GITHUB_REF#refs/heads/}"
+
+      - name: Get git user info
+        id: git-info
+        run: |
+          echo "##[set-output name=user_email;]$(git config --get user.email)"
+          echo "##[set-output name=user_name;]$(git config --get user.name)"
+
       - name: Commit changes
         run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
+          git config --local user.email "${{ steps.git-info.outputs.user_email }}"
+          git config --local user.name "${{ steps.git-info.outputs.user_name }}"
           git add README.md
-          git commit -m "Update README.md with latest directory tree"
-          git push --force
+          git commit -m "Update project README.md with latest directory tree"
+          git push --force origin HEAD:${{ steps.vars.outputs.branch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Merge changes to main
+        run: |
+          git checkout main
+          git pull origin main
+          git merge --no-ff ${{ steps.vars.outputs.branch }}
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
     name: Release Workflow
