@@ -1005,6 +1005,8 @@ jobs:
         with:
           args: check ./ --fix
 
+  # NOT important for the DevOps course
+  # will manage it afther done graduation tasks
   # test-and-coverage:
   #   name: Run Tests and Check Coverage
   #   runs-on: ubuntu-latest
@@ -1063,6 +1065,9 @@ jobs:
       - name: Install tree
         run: sudo apt-get install -y tree
 
+      - name: Set executable permissions for update_readme_tree.sh
+        run: chmod +x ./update_readme_tree.sh
+
       - name: Update README.md with directory tree
         run: ./update_readme_tree.sh
 
@@ -1075,6 +1080,7 @@ jobs:
           git push --force
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
   release:
     name: Release Workflow
