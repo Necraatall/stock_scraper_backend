@@ -1072,21 +1072,18 @@ jobs:
 
       - name: Get current branch name
         id: vars
-        run: echo "##[set-output name=branch;]${GITHUB_REF#refs/heads/}"
+        run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
 
-      - name: Get git user info
-        id: git-info
+      - name: Set git user info
         run: |
-          echo "##[set-output name=user_email;]$(git config --get user.email)"
-          echo "##[set-output name=user_name;]$(git config --get user.name)"
+          git config --local user.email "${GIT_USER_EMAIL:-actions@github.com}"
+          git config --local user.name "${GIT_USER_NAME:-GitHub Actions}"
 
       - name: Commit changes
         run: |
-          git config --local user.email "${{ steps.git-info.outputs.user_email }}"
-          git config --local user.name "${{ steps.git-info.outputs.user_name }}"
           git add README.md
           git commit -m "Update project README.md with latest directory tree"
-          git push --force origin HEAD:${{ steps.vars.outputs.branch }}
+          git push --force origin HEAD:${{ env.branch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -1094,7 +1091,7 @@ jobs:
         run: |
           git checkout main
           git pull origin main
-          git merge --no-ff ${{ steps.vars.outputs.branch }}
+          git merge --no-ff ${{ env.branch }}
           git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
