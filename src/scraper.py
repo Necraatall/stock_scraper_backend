@@ -1,6 +1,14 @@
 # src/scraper.py
 import os
-from sqlalchemy import Table, MetaData, Column, Integer, String, Float, DateTime, create_engine
+from sqlalchemy import (
+  Table, 
+  MetaData, 
+  Column, 
+  Integer, 
+  String, 
+  Float, 
+  DateTime, 
+  create_engine)
 from dotenv import load_dotenv
 from sqlalchemy.orm import sessionmaker
 import requests
@@ -11,7 +19,7 @@ from src.models import Stock, Base
 # Load environment variables
 load_dotenv()
 
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./test.db')
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./tests/test_db/test.db')
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 metadata = MetaData()
