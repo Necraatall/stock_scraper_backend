@@ -76,7 +76,7 @@ def parse_row(row) -> dict:
     return stock
 
 def get_stock_data() -> list:
-    url = "https://www.kurzy.cz/akcie-cz/burza/"
+    url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
     html_content = fetch_page_content(url)
     table = parse_html(html_content)
     rows = extract_rows(table)

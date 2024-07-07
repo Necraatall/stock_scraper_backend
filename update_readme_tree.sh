@@ -3,10 +3,30 @@
 # Generate the directory tree
 tree_output=$(tree -I '.git|.venv|__pycache__|node_modules')
 
-# Insert the tree into README.md
+# Insert the tree into README.md and remove sections between markers
 awk -v tree="$tree_output" '
-  BEGIN { in_tree=0 }
-  /```scss/ { in_tree=1; print; print tree; next }
-  in_tree && /```/ { in_tree=0; next }
-  !in_tree { print }
+  /## Project Structure/,/```scss/ {
+    if (/```scss/) {
+      print "```scss"
+      print tree
+      in_target_section=0
+    }
+    if (!in_target_section) {
+      in_target_section=1
+      next
+    }
+    next
+  }
+  /```/,0 {
+    if (/```/) {
+      print "```"
+      in_target_section=0
+    }
+    if (!in_target_section) {
+      in_target_section=1
+      next
+    }
+    next
+  }
+  { if (!in_target_section) print }
 ' README.md > README.tmp && mv README.tmp README.md

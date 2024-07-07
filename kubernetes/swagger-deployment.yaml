@@ -1,0 +1,55 @@
+# kubernetes/swagger-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swagger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: swagger
+  template:
+    metadata:
+      labels:
+        app: swagger
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: swagger
+        image: stock-scraper:latest
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: app-volume
+          mountPath: /app
+        - name: postman-collections
+          mountPath: /kubernetes/postman_call
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: POSTGRES_PASSWORD
+        command: ["sh", "-c", "./wait-for-it.sh db-service:5432 -- poetry run alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000"]
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+            ephemeral-storage: "1Gi"
+      volumes:
+      - name: app-volume
+        hostPath:
+          path: /home/milan/Programy/Python/DevOps/lection2
+      - name: postman-collections
+        hostPath:
+          path: /home/milan/Programy/Python/DevOps/lection2/kubernetes/postman_call
