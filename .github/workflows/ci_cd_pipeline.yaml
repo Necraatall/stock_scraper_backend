@@ -1,0 +1,137 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'feature/**'
+      - 'bug/**'
+      - 'chore/**'
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_TECHNICAL_USER:
+        required: true
+      AWS_SECRET_ACCESS_TECHNICAL_USER:
+        required: true
+
+jobs:
+  setup:
+    name: AWS Setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
+          aws-region: us-east-1
+
+  trivy-scan:
+    name: Trivy Scan
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: 'public.ecr.aws/d8o8x6c7/stock_scraper_backend:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+  ruff-scan:
+    name: Run Ruff
+    runs-on: ubuntu-latest
+    needs: trivy-scan
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Ruff
+        uses: chartboost/ruff-action@v1
+        with:
+          args: check ./ --fix
+
+  docker-build-and-push:
+    name: Docker Build and Push to AWS ECR Public
+    runs-on: ubuntu-latest
+    needs: ["setup", "trivy-scan", "ruff-scan"]
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Amazon ECR Public
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Build, tag, and push Docker image to Amazon ECR Public
+        env:
+          ECR_REPOSITORY: "public.ecr.aws/d8o8x6c7/stock_scraper_backend"
+          IMAGE_TAG: latest
+        run: |
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REPOSITORY:$IMAGE_TAG
+
+  release:
+    name: Release Workflow
+    runs-on: ubuntu-latest
+    needs: docker-build-and-push
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.16
+
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Install GoReleaser
+        run: |
+          curl -sL https://git.io/goreleaser | bash
+          goreleaser --version
+
+      - name: Release build
+        run: |
+          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} goreleaser release
+
+      - name: Docker login
+        run: echo ${{ secrets.REGISTRY_TOKEN }} | docker login ghcr.io -u ${{ secrets.REGISTRY_USER }} --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/Necraatall/stock_scraper_backend:${{ github.ref }} .  
+      
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/Necraatall/stock_scraper_backend:${{ github.ref }}
+
+      - name: Scan Docker image for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ghcr.io/Necraatall/stock_scraper_backend:${{ github.ref }}'
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
