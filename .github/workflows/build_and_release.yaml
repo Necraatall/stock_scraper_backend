@@ -23,6 +23,19 @@
 name: CI/CD Pipeline - Build and Release
 
 on:
+
+  push:
+    branches:
+      - 'feature/**'
+      - 'bug/**'
+      - 'chore/**'
+  release:
+    types:
+      - created
+  workflow_run:
+    workflows: ["CI/CD Pipeline - Review and Preparation"]
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       environment:
@@ -33,16 +46,6 @@ on:
         description: 'Version to deploy'
         required: true
         default: '1.0.0'
-  push:
-    branches:
-      - main
-  release:
-    types:
-      - created
-  workflow_run:
-    workflows: ["CI/CD Pipeline - Review and Preparation"]
-    types:
-      - completed
 
 jobs:
   setup:

@@ -2,14 +2,13 @@
 name: CI/CD Pipeline - Review and Preparation
 
 on:
-  workflow_dispatch:
-  workflow_call:
   pull_request:
     branches:
-      - main
       - 'feature/**'
       - 'bug/**'
       - 'chore/**'
+  workflow_dispatch:
+  workflow_call:
 
 jobs:
   trivy-scan:
