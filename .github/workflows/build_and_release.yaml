@@ -29,6 +29,10 @@ on:
         description: 'Deployment Environment'
         required: true
         default: 'production'
+      version:
+        description: 'Version to deploy'
+        required: true
+        default: '1.0.0'
   push:
     branches:
       - main
@@ -44,7 +48,6 @@ jobs:
   setup:
     name: AWS Setup
     runs-on: ubuntu-latest
-    if: github.event_name != 'workflow_run'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -60,7 +63,7 @@ jobs:
     name: Docker Build and Push to AWS ECR Public
     runs-on: ubuntu-latest
     needs: setup
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.event_name == 'workflow_run'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'workflow_run'
     outputs:
       new_version: ${{ steps.set-output.outputs.new_version }}
     steps:
