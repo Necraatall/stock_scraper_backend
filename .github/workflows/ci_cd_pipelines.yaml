@@ -213,22 +213,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v2
-        with:
-          go-version: ^1.16
-
-      - name: Install dependencies
-        run: go mod tidy
-
-      - name: Install GoReleaser
+      - name: Check REGISTRY_TOKEN
         run: |
-          curl -sL https://git.io/goreleaser | bash
-          goreleaser --version
-
-      - name: Release build
-        run: |
-          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} goreleaser release
+          echo "REGISTRY_TOKEN is set to: ${{ secrets.REGISTRY_TOKEN }}"
+          echo "REGISTRY_USER is set to: ${{ secrets.REGISTRY_USER }}"
 
       - name: Docker login
         run: echo ${{ secrets.REGISTRY_TOKEN }} | docker login ghcr.io -u ${{ secrets.REGISTRY_USER }} --password-stdin
@@ -236,7 +224,7 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t ghcr.io/Necraatall/stock_scraper_backend:${{ needs.docker-build-and-push.outputs.new_version }} .  
-      
+    
       - name: Push Docker image
         run: |
           docker push ghcr.io/Necraatall/stock_scraper_backend:${{ needs.docker-build-and-push.outputs.new_version }}
