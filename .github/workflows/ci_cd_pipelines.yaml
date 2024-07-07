@@ -1,5 +1,5 @@
-# .github/workflows/review_and_preparation.yaml
-name: CI/CD Pipeline - Review and Preparation
+# .github/workflows/ci_cd_pipeline.yaml
+name: CI/CD Pipeline
 
 on:
   pull_request:
@@ -8,13 +8,42 @@ on:
       - 'feature/**'
       - 'bug/**'
       - 'chore/**'
+  push:
+    branches:
+      - main
+  release:
+    types:
+      - created
   workflow_dispatch:
-  workflow_call:
+    inputs:
+      environment:
+        description: 'Deployment Environment'
+        required: true
+        default: 'production'
+      version:
+        description: 'Version to deploy'
+        required: true
+        default: '1.0.0'
 
 jobs:
+  setup:
+    name: AWS Setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
+          aws-region: us-east-1
+
   trivy-scan:
     name: Trivy Scan
     runs-on: ubuntu-latest
+    needs: setup
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -131,3 +160,86 @@ jobs:
 
   #     - name: Display README.md contents
   #       run: cat README.md
+
+  docker-build-and-push:
+    name: Docker Build and Push to AWS ECR Public
+    runs-on: ubuntu-latest
+    needs: ruff-scan
+    outputs:
+      new_version: ${{ steps.set-output.outputs.new_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get latest version tag
+        id: get-tag
+        run: |
+          if git describe --tags `git rev-list --tags --max-count=1` &>/dev/null; then
+            latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          else
+            latest_tag="v0.0.0"
+          fi
+          echo "Latest tag: $latest_tag"
+          echo "::set-output name=latest_tag::$latest_tag"
+
+      - name: Increment version
+        id: set-output
+        run: |
+          latest_tag=${{ steps.get-tag.outputs.latest_tag }}
+          version_without_v="${latest_tag#v}"
+          IFS='.' read -r major minor patch <<< "$version_without_v"
+          new_patch=$((patch + 1))
+          new_version="v$major.$minor.$new_patch"
+          echo "New version: $new_version"
+          echo "::set-output name=new_version::$new_version"
+
+      - name: Log in to Amazon ECR Public
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Build, tag, and push Docker image to Amazon ECR Public
+        env:
+          ECR_REPOSITORY: "public.ecr.aws/d8o8x6c7/stock_scraper_backend"
+          IMAGE_TAG: ${{ steps.set-output.outputs.new_version }}
+        run: |
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REPOSITORY:$IMAGE_TAG
+
+  release:
+    name: Release Workflow
+    runs-on: ubuntu-latest
+    needs: docker-build-and-push
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.16
+
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Install GoReleaser
+        run: |
+          curl -sL https://git.io/goreleaser | bash
+          goreleaser --version
+
+      - name: Release build
+        run: |
+          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} goreleaser release
+
+      - name: Docker login
+        run: echo ${{ secrets.REGISTRY_TOKEN }} | docker login ghcr.io -u ${{ secrets.REGISTRY_USER }} --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/Necraatall/stock_scraper_backend:${{ needs.docker-build-and-push.outputs.new_version }} .  
+      
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/Necraatall/stock_scraper_backend:${{ needs.docker-build-and-push.outputs.new_version }}
