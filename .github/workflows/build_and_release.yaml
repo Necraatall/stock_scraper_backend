@@ -1,24 +1,3 @@
-# ########################################################
-# ## pytest runs on docker-build-and-push image ##########
-# ########################################################
-# # reseni chyb testu:
-# KeyError: 'time' # time je nazev sloupce
-#     Tento problém nastává, protože v některých řádcích tabulky 
-#     nemusí být sloupec time. V testu test_get_stock_data 
-#     je třeba tuto situaci správně zpracovat.
-
-# OperationalError: could not translate host name "db" to address: Name or service not known
-
-#     Tento problém je způsoben tím, že testovací Docker container 
-#     nemá přístup k databázi, protože hostname db 
-#     není správně nastavený nebo není dostupný. 
-#     Během testování by měla být použita lokální SQLite 
-#     databáze, kterou lze snadno nastavit a použít.
-
-# reseni updatu tree v readme... nutno udelat pro kazde readme
-# pred tim vsak doladit
-# ########################################################
-
 # .github/workflows/build_and_release.yaml
 name: CI/CD Pipeline - Build and Release
 
@@ -36,6 +15,9 @@ on:
   push:
     branches:
       - main
+      - 'feature/**'
+      - 'bug/**'
+      - 'chore/**'
   release:
     types:
       - created
