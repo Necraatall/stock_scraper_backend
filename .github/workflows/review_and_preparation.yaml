@@ -4,6 +4,7 @@ name: CI/CD Pipeline - Review and Preparation
 on:
   pull_request:
     branches:
+      - main
       - 'feature/**'
       - 'bug/**'
       - 'chore/**'
