@@ -19,9 +19,7 @@ from src.models import Stock, Base
 # Load environment variables
 load_dotenv()
 
-DATABASE_URL = os.getenv(
-    'DATABASE_URL', 'sqlite:///./test/test_db/test.db'
-    )  # Default to SQLite for testing
+DATABASE_URL = os.getenv('DATABASE_URL')
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 metadata = MetaData()

@@ -95,28 +95,62 @@ poetry run pytest
 
 ```scss
 .
-├── alembic/
-├── bin/
-├── src/
-├── tests/
-├── .dockerignore
-├── .env
-├── .git/
-├── .github/
-├── .python-version
-├── .venv/
+├── alembic
+│   ├── env.py
+│   ├── __pycache__
+│   │   └── env.cpython-310.pyc
+│   ├── README
+│   ├── script.py.mako
+│   └── versions
+│       └── __pycache__
 ├── alembic.ini
+├── bin
+│   └── task
 ├── cleanup_docker.sh
+├── cloudformation
+│   ├── combined.yaml
+│   ├── ec2_instance.yaml
+│   └── s3_bucket.yaml
 ├── docker-compose.yml
 ├── Dockerfile
 ├── poetry.lock
-├── prestart.sh
 ├── pyproject.toml
 ├── README.md
 ├── requirements.txt
+├── src
+│   ├── initialize_db.py
+│   ├── __init__.py
+│   ├── main.py
+│   ├── models.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-310.pyc
+│   │   ├── main.cpython-310.pyc
+│   │   ├── models.cpython-310.pyc
+│   │   └── scraper.cpython-310.pyc
+│   ├── README.md
+│   └── scraper.py
 ├── Taskfile.yaml
+├── terraform
+│   ├── backend-config.tfvars
+│   ├── backend.tf
+│   ├── main.tf
+│   ├── outputs.tf
+│   ├── tfplan
+│   └── variables.tf
+├── tests
+│   ├── db_healthcheck.py
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── test_database.py
+│   ├── test_db
+│   └── test_scraper.py
+├── update_readme_tree.sh
 ├── wait-for-it.sh
 └── ZALOHA
+    ├── poznamky.txt
+    └── prune_docker.sh
+
+13 directories, 41 files
 ```
 
 ## License

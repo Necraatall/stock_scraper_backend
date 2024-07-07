@@ -1,1 +1,0 @@
-Toto je testovací soubor pro nahrání do S3.

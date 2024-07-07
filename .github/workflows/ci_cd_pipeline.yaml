@@ -7,6 +7,7 @@ on:
       - 'feature/**'
       - 'bug/**'
       - 'chore/**'
+  workflow_dispatch:
   workflow_call:
     secrets:
       AWS_ACCESS_KEY_TECHNICAL_USER:
@@ -29,33 +30,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
           aws-region: us-east-1
 
-  docker-build-and-push:
-    name: Docker Build and Push to AWS ECR Public
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Log in to Amazon ECR Public
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
-        run: |
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-
-      - name: Build, tag, and push Docker image to Amazon ECR Public
-        env:
-          ECR_REPOSITORY: "public.ecr.aws/d8o8x6c7/stock_scraper_backend"
-          IMAGE_TAG: latest
-        run: |
-          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REPOSITORY:$IMAGE_TAG
-
   trivy-scan:
     name: Trivy Scan
     runs-on: ubuntu-latest
-    needs: docker-build-and-push
+    needs: setup
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -83,12 +61,13 @@ jobs:
         with:
           args: check ./ --fix
 
-  test-and-coverage:
-    name: Run Tests and Check Coverage
+  docker-build-and-push:
+    name: Docker Build and Push to AWS ECR Public
     runs-on: ubuntu-latest
-    needs: ruff-scan
+    needs: ["setup", "trivy-scan", "ruff-scan"]
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Log in to Amazon ECR Public
@@ -98,58 +77,19 @@ jobs:
         run: |
           aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
-      - name: Pull Docker image
-        run: |
-          docker pull public.ecr.aws/d8o8x6c7/stock_scraper_backend:latest
-
-      - name: Run tests and check coverage
-        run: |
-          docker run --rm public.ecr.aws/d8o8x6c7/stock_scraper_backend:latest bash -c "export DATABASE_URL='sqlite:///./test.db' && poetry run coverage run -m pytest && poetry run coverage report && poetry run coverage html && poetry run coverage-badge -o coverage.svg -f"
-      
-      - name: Upload coverage badge
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-badge
-          path: coverage.svg
-
-      - name: Upload HTML coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: html-coverage-report
-          path: htmlcov
-
-  update-readme:
-    runs-on: ubuntu-latest
-    needs: test-and-coverage
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install tree
-        run: sudo apt-get install -y tree
-
-      - name: Update README.md with directory tree
-        run: ./update_readme_tree.sh
-
-      - name: Commit changes
-        run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git add README.md
-          git commit -m "Update README.md with latest directory tree"
-          git push --force
+      - name: Build, tag, and push Docker image to Amazon ECR Public
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ECR_REPOSITORY: "public.ecr.aws/d8o8x6c7/stock_scraper_backend"
+          IMAGE_TAG: latest
+        run: |
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REPOSITORY:$IMAGE_TAG
 
   release:
     name: Release Workflow
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs: docker-build-and-push
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
