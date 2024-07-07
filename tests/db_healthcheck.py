@@ -1,4 +1,4 @@
-# tests/test_healthcheck.py
+# tests/db_healthcheck.py
 import os
 import pytest
 from sqlalchemy import create_engine
