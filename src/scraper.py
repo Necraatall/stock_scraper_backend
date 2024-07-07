@@ -89,7 +89,7 @@ def parse_row(row) -> dict:
 
 # Get stock data from webpage
 def get_stock_data() -> list:
-    url = "https://www.kurzy.cz/akcie-cz/burza/"
+    url = "https://www.kurzy.cz/akcie-cz/burza/bcpp_online"
     html_content = fetch_page_content(url)
     table = parse_html(html_content)
     rows = extract_rows(table)

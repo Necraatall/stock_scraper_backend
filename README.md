@@ -18,7 +18,7 @@ This project is a web scraper for stock values, set up using Docker, Poetry, Tas
 
 To clone the repository from GitHub, use the following command:
 ```sh
-git clone git@github.com:Necraatall/lection2.git .
+git clone git@github.com:Necraatall/stock_scraper_backend.git .
 ```
 This will clone the repository into the current directory.
 
