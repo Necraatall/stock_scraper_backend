@@ -26,6 +26,7 @@ if os.getenv('TESTING') == 'true':
     DATABASE_URL = os.getenv('TEST_DATABASE_URL')
 else:
     DATABASE_URL = os.getenv('DATABASE_URL')
+
 # Function to create the engine with pool_pre_ping
 def get_engine():
     return create_engine(
