@@ -1,0 +1,36 @@
+# .github/workflows/docker-publish.yml
+name: Build and Push Docker Image DOCKER
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to Amazon ECR Public
+      env:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_TECHNICAL_USER }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_TECHNICAL_USER }}
+        aws-region: us-east-1
+      run: |
+        aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+    - name: Build and push Docker image
+      env:
+        IMAGE_URI: public.ecr.aws/d8o8x6c7/stock_scraper_backend:latest
+      run: |
+        docker buildx build --platform linux/amd64 -t $IMAGE_URI .
+        docker push $IMAGE_URI
