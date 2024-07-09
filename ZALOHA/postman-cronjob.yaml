@@ -1,0 +1,27 @@
+# kubernetes/postman_cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postman-cronjob
+spec:
+  schedule: "0 19 * * *" # runs every day at 19:00
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: postman-tests
+              image: public.ecr.aws/d8o8x6c7/postman-tests:latest
+              volumeMounts:
+                - name: postman-config-volume
+                  mountPath: /etc/newman
+          volumes:
+            - name: postman-config-volume
+              configMap:
+                name: postman-config
+          containers:
+            - name: postman-tests
+              image: public.ecr.aws/d8o8x6c7/postman-tests:latest
+              command: ["newman", "run", "/etc/newman/postman_test.json"]
+          backoffLimit: 3 # if fail occure, rerun 3times
