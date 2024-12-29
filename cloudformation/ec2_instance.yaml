@@ -1,3 +1,4 @@
+# cloudformation/ec2_instance.yaml
 AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyEC2Instance:

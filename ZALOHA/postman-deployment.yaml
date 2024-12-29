@@ -1,0 +1,59 @@
+# kubernetes/postman-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swagger
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: swagger
+  template:
+    metadata:
+      labels:
+        app: swagger
+    spec:
+      containers:
+      - name: swagger
+        image: public.ecr.aws/d8o8x6c7/stock-scraper:latest
+        command:
+          - sh
+          - '-c'
+          - |
+            ./wait-for-it.sh db-service:5432 -- poetry run alembic upgrade head &&
+            uvicorn src.main:app --host 0.0.0.0 --port 8000
+        env:
+          - name: POSTGRES_DB
+            valueFrom:
+              secretKeyRef:
+                key: POSTGRES_DB
+                name: db-secret
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                key: POSTGRES_USER
+                name: db-secret
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: POSTGRES_PASSWORD
+                name: db-secret
+        ports:
+          - containerPort: 8000
+        resources:
+          limits:
+            cpu: 500m
+            ephemeral-storage: 1Gi
+            memory: 512Mi
+          requests:
+            cpu: 500m
+            ephemeral-storage: 1Gi
+            memory: 512Mi
+        volumeMounts:
+          - name: postman-collections
+            mountPath: /kubernetes/postman_call/postman_test.json
+            subPath: postman_test.json
+      volumes:
+        - name: postman-collections
+          configMap:
+            name: postman-config

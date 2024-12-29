@@ -1,0 +1,14 @@
+# kubernetes/swagger-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: swagger-service
+  namespace: default
+spec:
+  selector:
+    app: swagger
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: LoadBalancer

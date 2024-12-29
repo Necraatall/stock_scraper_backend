@@ -158,6 +158,32 @@ jobs:
   #     - name: Display README.md contents
   #       run: cat README.md
 
+  kubernetes-deploy:
+    name: Deploy to Kubernetes and test with Postman
+    runs-on: ubuntu-latest
+    needs: ruff-scan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x ./kubectl
+          sudo mv ./kubectl /usr/local/bin/kubectl
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --name stock-scraper-eks-cluster --region us-east-1
+        
+      - name: Deploy Postman Deployment
+        run: |
+          kubectl apply -f ./kubernetes/postman-deployment.yaml
+
+      - name: Deploy Postman CronJob
+        run: |
+          kubectl apply -f ./kubernetes/postman-cronjob.yaml
+
   docker-build-and-push:
     name: Docker Build and Push to AWS ECR Public and GHCR
     runs-on: ubuntu-latest

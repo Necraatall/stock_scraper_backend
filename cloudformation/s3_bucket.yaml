@@ -1,11 +1,7 @@
+# cloudformation/s3_bucket.yaml
 AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyS3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: 
-        Fn::Join:
-          - "-"
-          - - achjotechnicalbucketuztouloz
-            - Ref: AWS::975049935036
-            - Ref: AWS::us-east-1
+      BucketName: achjotechnicalbucketuztouloz-us-east-1
