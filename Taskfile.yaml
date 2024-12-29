@@ -21,44 +21,38 @@ tasks:
     desc: |
       This task performs the following steps to set up auto-completion for Taskfile:
       1. Downloads the bash auto-completion script for Taskfile.
-      2. Adds the current user to the sudoers file to allow moving the script without a password.
-      3. Moves the downloaded script to the bash-completion directory.
-      4. Adds a line to the .bashrc file to source the auto-completion script on shell startup.
+      2. Moves the script to the user's local bash-completion directory.
+      3. Adds a line to the .bashrc file to source the auto-completion script on shell startup.
     cmds:
-      - curl -sL https://taskfile.dev/install.sh | sh
-      - export PATH="$PATH:./bin"
-      - curl -LO https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash
-      - echo 'USER=$(cat {{.USER_FILE}}) && $USER ALL=(ALL:ALL) NOPASSWD:'' /usr/bin/mv' | echo 'sudo tee /etc/sudoers.d/$USER'
-      - mv task.bash /usr/share/bash-completion/completions/
-      - echo 'source /usr/share/bash-completion/completions/task' >> ~/.bashrc
+      - mkdir -p ~/.local/share/bash-completion/completions
+      - curl -LO https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash || { echo "Failed to download task.bash"; exit 1; }
+      - mv task.bash ~/.local/share/bash-completion/completions/ || { echo "Failed to move task.bash"; exit 1; }
+      - grep -qxF 'source ~/.local/share/bash-completion/completions/task.bash' ~/.bashrc || echo 'source ~/.local/share/bash-completion/completions/task.bash' >> ~/.bashrc
 
   install-poetry:
     summary: Installs Poetry package manager
     deps:
       - setup
     desc: |
-      This task performs the following steps to install Poetry package manager:
-      1. Downloads the installation script for Poetry.
-      2. Executes the installation script.
+      Installs Poetry package manager if not already installed.
     env:
-      POETRY_VERSION: "1.1.12"
       PATH: "/app/.venv/bin:${PATH}"
       PYTHONPATH: ".:src:./.venv/lib/python3.10/site-packages:$PYTHONPATH"
     cmds:
-      - pip install -r requirements.txt
-      - pip install poetry==${POETRY_VERSION}
-      - pip install -U pip
-      - pip install poetry
-      - pip install --upgrade poetry
+      - if ! command -v poetry >/dev/null; then curl -sSL https://install.python-poetry.org | python3 -; fi
+      - export PATH="$HOME/.local/bin:$PATH"
+      - ~/.local/bin/poetry --version
 
   install-dependencies:
     summary: Installs project dependencies
     deps:
       - install-poetry
     cmds:
-      - poetry lock
-      - poetry install --with dev
-      - poetry update
+      - if [ -d ".venv" ]; then rm -rf .venv; fi  # Odstranění starého prostředí
+      - poetry env use python3                    # Vytvoření nového prostředí
+      - poetry lock                               # Zamknutí závislostí
+      - poetry install --with dev                 # Instalace včetně dev balíčků
+      - poetry update                             # Aktualizace závislostí
 
   local-install-trivy:
     summary: Installs Trivy vulnerability scanner
@@ -117,16 +111,21 @@ tasks:
     cmds:
       - pytest --cov=lection2 ./src
 
-# this is setup for newones on python
+  # this is setup for newones on python
   install-docker:
     summary: Installs Docker and Docker Compose
     desc: |
-      This task performs the following steps to install Docker and Docker Compose:
-      1. Updates the package list.
-      2. Installs Docker and Docker Compose.
+      This task checks if Docker and Docker Compose are installed.
+      If not, it installs them.
     cmds:
-      - sudo apt update
-      - sudo apt install -y docker.io docker-compose
+      - |
+        if ! command -v docker >/dev/null 2>&1 || ! command -v docker-compose >/dev/null 2>&1; then
+          echo "Docker or Docker Compose not found. Installing..."
+          sudo apt update
+          sudo apt install -y docker.io docker-compose
+        else
+          echo "Docker and Docker Compose are already installed."
+        fi
 
   start-docker:
     summary: Starts Docker containers
