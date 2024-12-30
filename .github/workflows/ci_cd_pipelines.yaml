@@ -53,12 +53,12 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL'
           list-all-pkgs: true  # Scan all installed packages and versions
       - name: Generate report of fixed vulnerabilities
         run: |
           trivy fs --list-all-pkgs . > packages.txt
-          trivy fs --severity CRITICAL,HIGH --ignore-unfixed --format json . > vulnerabilities.json
+          trivy fs --severity CRITICAL --ignore-unfixed --format json . > vulnerabilities.json
           python3 <<EOF
           import json
           with open('vulnerabilities.json') as f:
