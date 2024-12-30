@@ -54,7 +54,23 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-
+          list-all-pkgs: true  # Scan all installed packages and versions
+      - name: Generate report of fixed vulnerabilities
+        run: |
+          trivy fs --list-all-pkgs . > packages.txt
+          trivy fs --severity CRITICAL,HIGH --ignore-unfixed --format json . > vulnerabilities.json
+          python3 <<EOF
+          import json
+          with open('vulnerabilities.json') as f:
+              data = json.load(f)
+          fixed_vulns = [v for v in data['Results'] if 'FixedVersion' in v['Vulnerabilities'][0]]
+          if fixed_vulns:
+              print("Fixed vulnerabilities found:")
+              for vuln in fixed_vulns:
+                  print(f"- ID: {vuln['Vulnerabilities'][0]['VulnerabilityID']}, Fixed in: {vuln['Vulnerabilities'][0]['FixedVersion']}")
+          else:
+              print("No fixed vulnerabilities found.")
+          EOF
   ruff-scan:
     name: Run Ruff
     runs-on: ubuntu-latest
