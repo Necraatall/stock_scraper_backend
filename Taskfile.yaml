@@ -29,27 +29,40 @@ tasks:
       - mv task.bash ~/.local/share/bash-completion/completions/ || { echo "Failed to move task.bash"; exit 1; }
       - grep -qxF 'source ~/.local/share/bash-completion/completions/task.bash' ~/.bashrc || echo 'source ~/.local/share/bash-completion/completions/task.bash' >> ~/.bashrc
 
+  install-pip:
+    summary: Ensures pip is installed and updated in the virtual environment
+    cmds:
+      - python -m ensurepip --upgrade
+      - pip install --upgrade pip
+
   install-poetry:
     summary: Installs Poetry package manager
     deps:
       - setup
+      - install-pip
     desc: |
-      Installs Poetry package manager if not already installed.
+      Installs the latest version of Poetry package manager if not already installed and ensures it is in PATH.
     env:
-      PATH: "/app/.venv/bin:${PATH}"
-      PYTHONPATH: ".:src:./.venv/lib/python3.10/site-packages:$PYTHONPATH"
+      PYTHONPATH: ".:src:./.venv/lib/python3.12/site-packages:$PYTHONPATH"
     cmds:
-      - if ! command -v poetry >/dev/null; then curl -sSL https://install.python-poetry.org | python3 -; fi
-      - export PATH="$HOME/.local/bin:$PATH"
-      - ~/.local/bin/poetry --version
+      - |
+        export PATH="$HOME/.local/bin:$PATH" && \
+        pip install six && \
+        if ! command -v poetry >/dev/null; then \
+          curl -sSL https://install.python-poetry.org | python3 -; \
+        fi && \
+        poetry --version
 
   install-dependencies:
     summary: Installs project dependencies
+    env:
+      PATH: "/root/.local/bin:$PATH"
     deps:
       - install-poetry
     cmds:
       - if [ -d ".venv" ]; then rm -rf .venv; fi  # Odstranění starého prostředí
-      - poetry env use python3                    # Vytvoření nového prostředí
+      - export POETRY_VERSION=$(curl -sSL https://api.github.com/repos/python-poetry/poetry/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') && echo "Using Poetry version $POETRY_VERSION"
+      - poetry env use python3.12                 # Vytvoření nového prostředí
       - poetry lock                               # Zamknutí závislostí
       - poetry install --with dev                 # Instalace včetně dev balíčků
       - poetry update                             # Aktualizace závislostí
@@ -109,7 +122,8 @@ tasks:
       This task performs the following steps to run pytest:
       1. Runs pytest against the tests.
     cmds:
-      - pytest --cov=lection2 ./src
+      - poetry run pytest --cov=src --cov-report=term-missing
+      - poetry run coverage html
 
   # this is setup for newones on python
   install-docker:
@@ -139,7 +153,6 @@ tasks:
     desc: "Setup the project"
     deps:
       - install-docker
-      - install-poetry
       - install-dependencies
       - start-docker
 
